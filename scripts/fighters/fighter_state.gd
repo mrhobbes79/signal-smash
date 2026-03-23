@@ -4,8 +4,15 @@ extends Node
 
 signal transitioned(new_state: String)
 
-## Reference to the fighter CharacterBody3D — set by FighterBase on _ready
-var fighter: FighterBase
+## Reference to the fighter — resolved lazily through the tree
+var fighter: CharacterBody3D:
+	get:
+		if fighter == null:
+			# Walk up: State -> StateMachine -> Fighter
+			var sm = get_parent()
+			if sm:
+				fighter = sm.get_parent() as CharacterBody3D
+		return fighter
 
 func enter() -> void:
 	pass

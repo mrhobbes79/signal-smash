@@ -38,10 +38,8 @@ var input_direction: Vector3 = Vector3.ZERO
 @onready var hurtbox: Area3D = $Hurtbox
 
 func _ready() -> void:
-	# Pass fighter reference to all states
-	if state_machine:
-		for state in state_machine.states.values():
-			state.fighter = self
+	# States resolve their fighter reference lazily via tree traversal
+	pass
 
 func _physics_process(delta: float) -> void:
 	# Apply gravity

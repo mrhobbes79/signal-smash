@@ -3,10 +3,13 @@ extends FighterState
 ## Fighter jumping upward.
 
 func enter() -> void:
-	fighter.velocity.y = fighter.JUMP_FORCE
-	fighter.is_grounded = false
+	if fighter:
+		fighter.velocity.y = fighter.JUMP_FORCE
+		fighter.is_grounded = false
 
 func physics_update(delta: float) -> void:
+	if fighter == null:
+		return
 	fighter.read_input()
 
 	# Air movement (reduced control)

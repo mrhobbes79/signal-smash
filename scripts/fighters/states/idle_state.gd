@@ -3,10 +3,13 @@ extends FighterState
 ## Fighter standing still, waiting for input.
 
 func enter() -> void:
-	fighter.velocity.x = 0.0
-	fighter.velocity.z = 0.0
+	if fighter:
+		fighter.velocity.x = 0.0
+		fighter.velocity.z = 0.0
 
 func physics_update(delta: float) -> void:
+	if fighter == null:
+		return
 	fighter.read_input()
 
 	# Transition to run if moving

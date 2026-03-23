@@ -3,6 +3,8 @@ extends FighterState
 ## Fighter falling / in the air with negative velocity.
 
 func physics_update(delta: float) -> void:
+	if fighter == null:
+		return
 	fighter.read_input()
 
 	# Air movement

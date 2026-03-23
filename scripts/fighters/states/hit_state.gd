@@ -6,6 +6,8 @@ func enter() -> void:
 	pass  # Knockback already applied in take_damage()
 
 func physics_update(delta: float) -> void:
+	if fighter == null:
+		return
 	# Apply air friction to slow knockback
 	fighter.velocity.x *= 0.95
 	fighter.velocity.z *= 0.95

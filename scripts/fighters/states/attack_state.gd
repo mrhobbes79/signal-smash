@@ -16,6 +16,9 @@ func enter() -> void:
 	_timer = 0.0
 	_has_hit = false
 
+	if fighter == null:
+		return
+
 	# Lunge forward
 	var lunge_dir: float = 1.0 if fighter.facing_right else -1.0
 	fighter.velocity.x += lunge_dir * ATTACK_LUNGE
@@ -27,6 +30,8 @@ func exit() -> void:
 	_set_hitbox_active(false)
 
 func physics_update(delta: float) -> void:
+	if fighter == null:
+		return
 	_timer += delta
 
 	# Activate hitbox during attack window

@@ -3,6 +3,8 @@ extends FighterState
 ## Fighter moving on the ground.
 
 func physics_update(delta: float) -> void:
+	if fighter == null:
+		return
 	fighter.read_input()
 
 	# Apply movement
