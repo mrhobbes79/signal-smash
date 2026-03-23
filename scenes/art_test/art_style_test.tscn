@@ -3,5 +3,4 @@
 [ext_resource type="Script" uid="uid://dnstuae8nsfon" path="res://scenes/art_test/art_style_test.gd" id="1"]
 
 [node name="ArtStyleTest" type="Node3D" unique_id=1255465701]
-transform = Transform3D(1, 0, 0, 0, -0.26764196, 0.96351844, 0, -0.96351844, -0.26764196, 0, 0, 0)
 script = ExtResource("1")

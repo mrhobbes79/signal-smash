@@ -97,7 +97,6 @@ func _build_arena() -> void:
 	env.background_color = palette["sky"]
 	env.ambient_light_color = palette["accent"]
 	env.ambient_light_energy = 0.3
-	env.tonemap_mode = Environment.TONE_MAP_FILMIC
 	_environment.environment = env
 	add_child(_environment)
 
