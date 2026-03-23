@@ -31,6 +31,7 @@ var hitstun_timer: float = 0.0
 
 ## Input
 var input_direction: Vector3 = Vector3.ZERO
+var use_manual_input: bool = false  ## If true, skip read_input() — input set externally (P2)
 
 ## References
 @onready var state_machine: StateMachine = $StateMachine
@@ -66,6 +67,8 @@ func _physics_process(delta: float) -> void:
 
 ## Read movement input for this player's device
 func read_input() -> void:
+	if use_manual_input:
+		return  # Input is set externally (e.g., P2 arrow keys)
 	input_direction = Vector3.ZERO
 	input_direction.x = Input.get_axis("move_left", "move_right")
 	input_direction.z = Input.get_axis("move_forward", "move_back")

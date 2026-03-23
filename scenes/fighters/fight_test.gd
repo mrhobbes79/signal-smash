@@ -84,6 +84,7 @@ func _build_fighters() -> void:
 
 	_fighter2 = _create_fighter(2, Vector3(3.0, 1.0, 0.0), Color("#7C3AED"), Color("#4C1D95"), Color("#06B6D4"), "VERO")
 	_fighter2.set("facing_right", false)
+	_fighter2.set("use_manual_input", true)
 	add_child(_fighter2)
 
 func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, accent: Color, fighter_name: String) -> CharacterBody3D:
@@ -278,8 +279,34 @@ func _build_hud() -> void:
 	canvas.add_child(_hud_label)
 
 func _process(_delta: float) -> void:
+	_update_p2_movement()
 	_update_hud()
 	_update_camera()
+
+func _update_p2_movement() -> void:
+	if _fighter2 == null:
+		return
+	var p2_dir := Vector3.ZERO
+	if Input.is_key_pressed(KEY_LEFT):
+		p2_dir.x -= 1.0
+	if Input.is_key_pressed(KEY_RIGHT):
+		p2_dir.x += 1.0
+	if Input.is_key_pressed(KEY_UP):
+		p2_dir.z -= 1.0
+	if Input.is_key_pressed(KEY_DOWN):
+		p2_dir.z += 1.0
+
+	_fighter2.set("input_direction", p2_dir)
+
+	var f2_model = _fighter2.get_node_or_null("Model")
+	if p2_dir.x > 0.1:
+		_fighter2.set("facing_right", true)
+		if f2_model:
+			f2_model.rotation_degrees.y = 0.0
+	elif p2_dir.x < -0.1:
+		_fighter2.set("facing_right", false)
+		if f2_model:
+			f2_model.rotation_degrees.y = 180.0
 
 func _update_hud() -> void:
 	if _hud_label == null:
@@ -326,39 +353,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		_handle_p2_input(event)
 
 func _handle_p2_input(event: InputEventKey) -> void:
-	# Map arrow keys to P2 movement
 	if _fighter2 == null:
 		return
-
-	var p2_dir := Vector3.ZERO
-
-	if Input.is_key_pressed(KEY_LEFT):
-		p2_dir.x -= 1.0
-	if Input.is_key_pressed(KEY_RIGHT):
-		p2_dir.x += 1.0
-	if Input.is_key_pressed(KEY_UP):
-		p2_dir.z -= 1.0
-	if Input.is_key_pressed(KEY_DOWN):
-		p2_dir.z += 1.0
-
-	_fighter2.set("input_direction", p2_dir)
-
-	var f2_model = _fighter2.get_node_or_null("Model")
-	if p2_dir.x > 0.1:
-		_fighter2.set("facing_right", true)
-		if f2_model:
-			f2_model.rotation_degrees.y = 0.0
-	elif p2_dir.x < -0.1:
-		_fighter2.set("facing_right", false)
-		if f2_model:
-			f2_model.rotation_degrees.y = 180.0
 
 	var f2_sm = _fighter2.get_node_or_null("StateMachine")
 	if f2_sm == null:
 		return
 
-	# P2 jump
-	if event.pressed and event.keycode == KEY_SHIFT and event.location == KEY_LOCATION_RIGHT:
+	# P2 jump (Right Shift)
+	if event.pressed and event.keycode == KEY_SHIFT:
 		if _fighter2.is_on_floor():
 			f2_sm._on_state_transition("jump")
 		elif _fighter2.get("can_double_jump"):
@@ -366,6 +369,6 @@ func _handle_p2_input(event: InputEventKey) -> void:
 			_fighter2.velocity.y = _fighter2.DOUBLE_JUMP_FORCE
 			f2_sm._on_state_transition("jump")
 
-	# P2 attack
-	if event.pressed and event.keycode == KEY_CTRL and event.location == KEY_LOCATION_RIGHT:
+	# P2 attack (Right Ctrl or L key for easier testing)
+	if event.pressed and (event.keycode == KEY_CTRL or event.keycode == KEY_L):
 		f2_sm._on_state_transition("attack")
