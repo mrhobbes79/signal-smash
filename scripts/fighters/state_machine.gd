@@ -7,6 +7,7 @@ extends Node
 
 var current_state: FighterState
 var states: Dictionary = {}
+var process_input: bool = true  ## Set false for manually-controlled fighters (P2)
 
 func _ready() -> void:
 	for child in get_children():
@@ -29,7 +30,7 @@ func _physics_process(delta: float) -> void:
 		current_state.physics_update(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if current_state:
+	if current_state and process_input:
 		current_state.handle_input(event)
 
 func _on_state_transition(new_state_name: String) -> void:

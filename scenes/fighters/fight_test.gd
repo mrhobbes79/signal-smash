@@ -86,6 +86,10 @@ func _build_fighters() -> void:
 	_fighter2.set("facing_right", false)
 	_fighter2.set("use_manual_input", true)
 	add_child(_fighter2)
+	# Disable P2 state machine input processing (P2 uses manual controls)
+	var f2_sm = _fighter2.get_node_or_null("StateMachine")
+	if f2_sm:
+		f2_sm.process_input = false
 
 func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, accent: Color, fighter_name: String) -> CharacterBody3D:
 	var fighter: CharacterBody3D = CharacterBody3D.new()
