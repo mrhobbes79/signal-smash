@@ -39,35 +39,44 @@ func _ready() -> void:
 	_build_lighting()
 
 func _build_arena() -> void:
-	# Main platform
-	var platform := ProceduralMesh.create_platform(16.0, 8.0, 0.5, Color("#EA580C"))
-	platform.position.y = -0.25
-	add_child(platform)
+	# Main platform (with collision)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#EA580C"))
 
-	# Platform edge
+	# Platform edge (visual only)
 	var edge := ProceduralMesh.create_platform(16.2, 8.2, 0.1, Color("#9A3412"))
 	edge.position.y = -0.55
 	add_child(edge)
 
-	# Left platform
-	var plat_l := ProceduralMesh.create_platform(3.5, 3.0, 0.3, Color("#78350F"))
-	plat_l.position = Vector3(-5.0, 2.0, 0.0)
-	add_child(plat_l)
+	# Left elevated platform (with collision)
+	_add_solid_platform(Vector3(-5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
 
-	# Right platform
-	var plat_r := ProceduralMesh.create_platform(3.5, 3.0, 0.3, Color("#78350F"))
-	plat_r.position = Vector3(5.0, 2.0, 0.0)
-	add_child(plat_r)
+	# Right elevated platform (with collision)
+	_add_solid_platform(Vector3(5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
 
-	# Ring-out zone (invisible — just for visual reference)
-	var boundary := ProceduralMesh.create_platform(20.0, 12.0, 0.1, Color(1, 0, 0, 0.1))
-	boundary.position.y = -10.0
-	add_child(boundary)
-
-	# Ground visual (far below for depth)
+	# Ground visual (far below for depth, visual only)
 	var ground := ProceduralMesh.create_platform(60.0, 60.0, 0.1, Color("#451a03"))
 	ground.position.y = -12.0
 	add_child(ground)
+
+## Creates a platform with both visual mesh and physics collision
+func _add_solid_platform(pos: Vector3, size: Vector3, color: Color) -> void:
+	var body := StaticBody3D.new()
+	body.position = pos
+	body.collision_layer = 1  # Layer 1 = World
+	body.collision_mask = 0
+
+	# Visual mesh
+	var mesh := ProceduralMesh.create_platform(size.x, size.z, size.y, color)
+	body.add_child(mesh)
+
+	# Collision shape
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	col.shape = shape
+	body.add_child(col)
+
+	add_child(body)
 
 func _build_fighters() -> void:
 	_fighter1 = _create_fighter(1, Vector3(-3.0, 1.0, 0.0), Color("#2563EB"), Color("#1E40AF"), Color("#FCD34D"), "RICO")
