@@ -48,7 +48,7 @@ func _ready() -> void:
 	# Mini-game handles its own _process loop
 	# MiniGameBase handles timer and score display
 
-func start(player_ids: Array[int]) -> void:
+func start(player_ids: Array) -> void:
 	_base.start(player_ids)
 	_start_game()
 

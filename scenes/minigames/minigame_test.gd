@@ -69,7 +69,8 @@ func _start_minigame() -> void:
 		base.game_completed.connect(_on_minigame_completed)
 
 	# Start
-	_minigame.start([1, 2])
+	var pids: Array[int] = [1, 2]
+	_minigame.start(pids)
 	_status_label.text = "ALIGN YOUR ANTENNA! Closest to target wins."
 
 func _on_minigame_completed(results: Dictionary) -> void:

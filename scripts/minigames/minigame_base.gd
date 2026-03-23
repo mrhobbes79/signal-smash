@@ -12,7 +12,7 @@ signal game_completed(results: Dictionary)
 @export var buff_stat: String = "range"
 @export var buff_value: int = 10
 
-var player_ids: Array[int] = []
+var player_ids: Array = []
 var scores: Dictionary = {}  # { player_id: float }
 var time_remaining: float = 0.0
 var is_running: bool = false
@@ -25,7 +25,7 @@ var _title_label: Label3D
 var _instruction_label: Label3D
 
 ## Called by the framework to start the mini-game
-func start(p_player_ids: Array[int]) -> void:
+func start(p_player_ids: Array) -> void:
 	player_ids = p_player_ids
 	scores.clear()
 	for pid in player_ids:
