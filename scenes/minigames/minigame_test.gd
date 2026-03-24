@@ -4,14 +4,19 @@ extends Node3D
 ## Press ENTER to start, R to restart.
 
 const AntennaAlignScene = preload("res://scenes/minigames/antenna_align.tscn")
+const SpectrumSniperScene = preload("res://scenes/minigames/spectrum_sniper.tscn")
+const CableRunScene = preload("res://scenes/minigames/cable_run.tscn")
 const MiniGameBaseScript = preload("res://scripts/minigames/minigame_base.gd")
 
+var _scenes: Array = []
+var _current_scene_idx: int = 0
 var _minigame: Node3D
 var _camera: Camera3D
 var _status_label: Label
 var _waiting_to_start: bool = true
 
 func _ready() -> void:
+	_scenes = [AntennaAlignScene, SpectrumSniperScene, CableRunScene]
 	_build_camera()
 	_build_hud()
 	_show_start_prompt()
@@ -39,16 +44,20 @@ func _build_hud() -> void:
 	canvas.add_child(_status_label)
 
 func _show_start_prompt() -> void:
+	var names: Array[String] = ["ANTENNA ALIGN-OFF", "SPECTRUM SNIPER", "CABLE RUN"]
+	var descs: Array[String] = [
+		"Align your dish antenna to the target signal.",
+		"Find the cleanest channel in the spectrum.",
+		"Route a cable through the maze. Pick the right connector!",
+	]
 	_status_label.text = """SIGNAL SMASH — Mini-Game Test
 
-ANTENNA ALIGN-OFF
-Align your dish antenna to the target tower signal.
-First to lock on and hold wins!
+%s
+%s
 
-P1: A/D azimuth, W/S elevation
-P2: ←/→ azimuth, ↑/↓ elevation
+1/2/3 = Switch mini-game | ENTER = Start | R = Restart | ESC = Menu
 
-Press ENTER to start"""
+Current: %d/%d""" % [names[_current_scene_idx], descs[_current_scene_idx], _current_scene_idx + 1, _scenes.size()]
 
 func _start_minigame() -> void:
 	_waiting_to_start = false
@@ -59,7 +68,7 @@ func _start_minigame() -> void:
 		await get_tree().process_frame
 
 	# Create mini-game
-	_minigame = AntennaAlignScene.instantiate()
+	_minigame = _scenes[_current_scene_idx].instantiate()
 	add_child(_minigame)
 
 	# Get the MiniGameBase child and connect completion
@@ -95,4 +104,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _minigame:
 				_minigame.queue_free()
 				_minigame = null
+			_show_start_prompt()
+		elif event.keycode == KEY_ESCAPE:
+			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
+		elif event.keycode == KEY_1 and _waiting_to_start:
+			_current_scene_idx = 0
+			_show_start_prompt()
+		elif event.keycode == KEY_2 and _waiting_to_start:
+			_current_scene_idx = 1
+			_show_start_prompt()
+		elif event.keycode == KEY_3 and _waiting_to_start:
+			_current_scene_idx = 2
 			_show_start_prompt()
