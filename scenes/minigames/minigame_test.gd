@@ -55,9 +55,9 @@ func _show_start_prompt() -> void:
 %s
 %s
 
-1/2/3 = Switch mini-game | ENTER = Start | R = Restart | ESC = Menu
+TAB = Next mini-game | F1/F2/F3 = Select | ENTER = Start | R = Restart | ESC = Menu
 
-Current: %d/%d""" % [names[_current_scene_idx], descs[_current_scene_idx], _current_scene_idx + 1, _scenes.size()]
+Current: [%d/%d] %s""" % [_current_scene_idx + 1, _scenes.size(), names[_current_scene_idx]]
 
 func _start_minigame() -> void:
 	_waiting_to_start = false
@@ -107,12 +107,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_start_prompt()
 		elif event.keycode == KEY_ESCAPE:
 			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
-		elif event.keycode == KEY_1 and _waiting_to_start:
+		# Switch mini-game with Tab (cycle) or F1/F2/F3
+		elif event.keycode == KEY_TAB and _waiting_to_start:
+			_current_scene_idx = (_current_scene_idx + 1) % _scenes.size()
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+			_show_start_prompt()
+		elif event.keycode == KEY_F1 and _waiting_to_start:
 			_current_scene_idx = 0
 			_show_start_prompt()
-		elif event.keycode == KEY_2 and _waiting_to_start:
+		elif event.keycode == KEY_F2 and _waiting_to_start:
 			_current_scene_idx = 1
 			_show_start_prompt()
-		elif event.keycode == KEY_3 and _waiting_to_start:
+		elif event.keycode == KEY_F3 and _waiting_to_start:
 			_current_scene_idx = 2
 			_show_start_prompt()
