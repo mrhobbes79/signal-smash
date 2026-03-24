@@ -46,6 +46,12 @@ func _ready() -> void:
 	if AudioManager:
 		AudioManager.play_music_monterrey()
 
+var _hazard_antenna: Node3D
+var _hazard_area: Area3D
+const HAZARD_SPEED: float = 40.0  # Degrees per second
+const HAZARD_KNOCKBACK: float = 8.0
+const HAZARD_DAMAGE: float = 12.0
+
 func _build_arena() -> void:
 	# Main platform (with collision)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#EA580C"))
@@ -65,6 +71,144 @@ func _build_arena() -> void:
 	var ground := ProceduralMesh.create_platform(60.0, 60.0, 0.1, Color("#451a03"))
 	ground.position.y = -12.0
 	add_child(ground)
+
+	# ═══ ARENA DECORATION ═══
+
+	# Tower 1 (left back) — antenna tower with cross bars
+	_build_tower(Vector3(-6.0, 0.0, -3.0), 5.5, Color("#6B7280"), Color("#FCD34D"))
+
+	# Tower 2 (right back) — shorter tower
+	_build_tower(Vector3(6.0, 0.0, -3.0), 4.0, Color("#6B7280"), Color("#FCD34D"))
+
+	# Cable between towers (visual)
+	var cable := ProceduralMesh.create_cylinder(0.02, 12.5, 4, Color.BLACK)
+	cable.position = Vector3(0.0, 4.5, -3.0)
+	cable.rotation_degrees.z = 90.0
+	add_child(cable)
+
+	# Cerro de la Silla backdrop (mountains)
+	_build_mountains()
+
+	# Rooftop elements — small equipment boxes
+	var equip_box1 := ProceduralMesh.create_box(Vector3(0.6, 0.4, 0.5), Color("#4B5563"))
+	equip_box1.position = Vector3(-7.0, 0.2, 1.5)
+	add_child(equip_box1)
+
+	var equip_box2 := ProceduralMesh.create_box(Vector3(0.8, 0.3, 0.6), Color("#374151"))
+	equip_box2.position = Vector3(7.0, 0.15, 2.0)
+	add_child(equip_box2)
+
+	# Small satellite dish (decoration)
+	var dish_pole := ProceduralMesh.create_cylinder(0.04, 1.0, 4, Color("#9CA3AF"))
+	dish_pole.position = Vector3(-7.0, 0.9, -1.5)
+	add_child(dish_pole)
+	var dish := ProceduralMesh.create_cone(0.3, 0.2, 6, Color("#E2E8F0"))
+	dish.position = Vector3(-7.0, 1.5, -1.5)
+	dish.rotation_degrees.x = -45.0
+	add_child(dish)
+
+	# ═══ SECTOR ANTENNA HAZARD ═══
+	_build_hazard()
+
+func _build_tower(pos: Vector3, height: float, color: Color, accent: Color) -> void:
+	# Main pole
+	var pole := ProceduralMesh.create_cylinder(0.08, height, 6, color)
+	pole.position = pos + Vector3(0, height / 2.0, 0)
+	add_child(pole)
+
+	# Cross bars
+	for i in range(3):
+		var bar := ProceduralMesh.create_cylinder(0.03, 1.0, 4, color)
+		bar.position = pos + Vector3(0, height * 0.3 * (i + 1), 0)
+		bar.rotation_degrees.z = 90.0
+		add_child(bar)
+
+	# Antenna on top
+	var ant := ProceduralMesh.create_cone(0.2, 0.5, 6, accent)
+	ant.position = pos + Vector3(0, height + 0.25, 0)
+	add_child(ant)
+
+	# Blinking light on top (red sphere)
+	var light := ProceduralMesh.create_sphere(0.06, 6, Color("#EF4444"))
+	light.position = pos + Vector3(0, height + 0.55, 0)
+	add_child(light)
+
+func _build_mountains() -> void:
+	var mountain_color := Color("#78350F").lightened(0.15)
+
+	# Cerro de la Silla silhouette — distinctive saddle shape
+	# Left peak
+	var peak1 := ProceduralMesh.create_cone(5.0, 9.0, 4, mountain_color)
+	peak1.position = Vector3(-10.0, 0.0, -30.0)
+	add_child(peak1)
+
+	# Right peak (slightly taller — the "saddle")
+	var peak2 := ProceduralMesh.create_cone(4.5, 11.0, 4, mountain_color.darkened(0.1))
+	peak2.position = Vector3(-3.0, 0.0, -33.0)
+	add_child(peak2)
+
+	# Saddle connection (lower ridge)
+	var ridge := ProceduralMesh.create_cone(3.0, 6.0, 4, mountain_color.darkened(0.05))
+	ridge.position = Vector3(-6.5, 0.0, -28.0)
+	add_child(ridge)
+
+	# Distant mountains
+	var bg1 := ProceduralMesh.create_cone(6.0, 7.0, 4, mountain_color.darkened(0.2))
+	bg1.position = Vector3(8.0, 0.0, -35.0)
+	add_child(bg1)
+
+	var bg2 := ProceduralMesh.create_cone(4.0, 5.0, 4, mountain_color.darkened(0.25))
+	bg2.position = Vector3(15.0, 0.0, -30.0)
+	add_child(bg2)
+
+func _build_hazard() -> void:
+	# Rotating sector antenna — mounted on a pole in the center-back area
+	# When it sweeps past a fighter, it deals damage and knockback
+
+	# Hazard pivot (rotates)
+	_hazard_antenna = Node3D.new()
+	_hazard_antenna.position = Vector3(0.0, 0.0, -2.0)
+	add_child(_hazard_antenna)
+
+	# Base pole
+	var pole := ProceduralMesh.create_cylinder(0.12, 2.0, 6, Color("#6B7280"))
+	pole.position.y = 1.0
+	_hazard_antenna.add_child(pole)
+
+	# Rotating arm (extends outward)
+	var arm := ProceduralMesh.create_cylinder(0.04, 3.0, 4, Color("#9CA3AF"))
+	arm.position = Vector3(1.5, 2.1, 0.0)
+	arm.rotation_degrees.z = 90.0
+	_hazard_antenna.add_child(arm)
+
+	# Sector antenna head (the dangerous part — cone shape)
+	var sector := ProceduralMesh.create_cone(0.35, 0.8, 6, Color("#FCD34D"))
+	sector.position = Vector3(3.0, 2.1, 0.0)
+	sector.rotation_degrees.z = 90.0
+	_hazard_antenna.add_child(sector)
+
+	# Warning stripes on arm
+	var warning := ProceduralMesh.create_box(Vector3(0.5, 0.08, 0.08), Color("#EF4444"))
+	warning.position = Vector3(1.5, 2.1, 0.0)
+	_hazard_antenna.add_child(warning)
+
+	# Hazard collision area (Area3D on the sector head)
+	_hazard_area = Area3D.new()
+	_hazard_area.collision_layer = 1 << 7  # Layer 8 = Hazards
+	_hazard_area.collision_mask = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)  # Scan player bodies
+	_hazard_area.monitoring = true
+
+	var hazard_shape := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(1.5, 0.8, 0.8)
+	hazard_shape.shape = shape
+	hazard_shape.position = Vector3(2.5, 2.1, 0.0)
+	_hazard_area.add_child(hazard_shape)
+
+	_hazard_antenna.add_child(_hazard_area)
+
+	# Connect hazard to damage
+	_hazard_area.body_entered.connect(_on_hazard_hit)
 
 ## Creates a platform with both visual mesh and physics collision
 func _add_solid_platform(pos: Vector3, size: Vector3, color: Color) -> void:
@@ -284,10 +428,40 @@ func _build_hud() -> void:
 	_hud_label.add_theme_constant_override("shadow_offset_y", 1)
 	canvas.add_child(_hud_label)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_p2_movement()
+	_update_hazard(delta)
 	_update_hud()
 	_update_camera()
+
+func _update_hazard(delta: float) -> void:
+	if _hazard_antenna:
+		_hazard_antenna.rotation_degrees.y += HAZARD_SPEED * delta
+
+var _hazard_cooldown: Dictionary = {}  # { fighter_id: float } — prevent rapid re-hits
+
+func _on_hazard_hit(body: Node3D) -> void:
+	# Check if it's a fighter
+	if not body.has_method("take_damage"):
+		return
+
+	var pid: int = body.get("player_id") if "player_id" in body else -1
+	if pid < 0:
+		return
+
+	# Cooldown to prevent hitting same fighter every frame
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if pid in _hazard_cooldown and now - _hazard_cooldown[pid] < 1.0:
+		return
+	_hazard_cooldown[pid] = now
+
+	# Apply damage and knockback from hazard position
+	body.take_damage(HAZARD_DAMAGE, _hazard_antenna.global_position, HAZARD_KNOCKBACK)
+
+	if AudioManager:
+		AudioManager.play_sfx("hit_heavy")
+
+	print("[FIGHT] HAZARD hit P%d! Sector antenna sweep!" % pid)
 
 func _update_p2_movement() -> void:
 	if _fighter2 == null:
