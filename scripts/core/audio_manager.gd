@@ -100,6 +100,13 @@ func play_music_menu() -> void:
 	_music_player.play()
 	_is_music_playing = true
 
+func play_music_select() -> void:
+	if _is_music_playing:
+		stop_music()
+	_music_player.stream = _gen_select_theme()
+	_music_player.play()
+	_is_music_playing = true
+
 func stop_music() -> void:
 	_music_player.stop()
 	_is_music_playing = false
@@ -289,6 +296,101 @@ func _gen_menu_ambient() -> AudioStreamWAV:
 		# Subtle data hum
 		var hum: float = sin(t * 60.0 * TAU) * 0.03
 		samples[i] = int(clampf(pad + hum, -1.0, 1.0) * 28000.0)
+
+	var wav := _samples_to_wav(samples)
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	wav.loop_end = samples.size()
+	return wav
+
+func _gen_select_theme() -> AudioStreamWAV:
+	# Dr. Mario-style character select theme — upbeat chiptune with WISP flair
+	# Key of C major, 140 BPM, 8 bars loop
+	var bpm: float = 140.0
+	var beat_dur: float = 60.0 / bpm
+	var bars: int = 8
+	var duration: float = beat_dur * 4 * bars
+	var samples := _make_samples(duration)
+
+	# Melody pattern (16th note resolution, 2 bars repeated 4x)
+	# Inspired by Dr. Mario's bouncy optimistic feel
+	var melody: Array[float] = [
+		523.3, 0, 659.3, 0, 784.0, 0, 659.3, 0,  # C5 . E5 . G5 . E5 .
+		698.5, 0, 784.0, 0, 880.0, 784.0, 659.3, 0,  # F5 . G5 . A5 G5 E5 .
+		523.3, 0, 587.3, 0, 659.3, 0, 523.3, 0,  # C5 . D5 . E5 . C5 .
+		440.0, 0, 523.3, 0, 587.3, 523.3, 440.0, 0,  # A4 . C5 . D5 C5 A4 .
+	]
+
+	# Bass pattern (quarter notes, 2 bars)
+	var bass: Array[float] = [
+		130.8, 130.8, 174.6, 174.6,  # C3 C3 F3 F3
+		146.8, 146.8, 164.8, 130.8,  # D3 D3 E3 C3
+	]
+
+	# Arpeggio pattern (fast 8th notes, adds chiptune sparkle)
+	var arp: Array[float] = [
+		1047.0, 1318.5, 1568.0, 1318.5, 1047.0, 1318.5, 1568.0, 1760.0,
+	]
+
+	var sixteenth: float = beat_dur / 4.0
+
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var mix: float = 0.0
+
+		# ── Drums ──
+		var beat_pos: float = fmod(t, beat_dur)
+		var bar_beat: int = int(fmod(t, beat_dur * 4) / beat_dur)
+
+		# Kick (beats 1, 3)
+		if bar_beat == 0 or bar_beat == 2:
+			if beat_pos < 0.06:
+				mix += sin(beat_pos * lerpf(200.0, 60.0, beat_pos / 0.06) * TAU) * exp(-beat_pos * 40.0) * 0.5
+
+		# Snare (beats 2, 4)
+		if bar_beat == 1 or bar_beat == 3:
+			if beat_pos < 0.05:
+				mix += randf_range(-1.0, 1.0) * exp(-beat_pos * 40.0) * 0.25
+				mix += sin(beat_pos * 300.0 * TAU) * exp(-beat_pos * 30.0) * 0.15
+
+		# Hi-hat (every 8th)
+		var eighth_pos: float = fmod(t, beat_dur / 2.0)
+		if eighth_pos < 0.015:
+			mix += randf_range(-1.0, 1.0) * exp(-eighth_pos * 150.0) * 0.1
+
+		# ── Bass (square wave for NES feel) ──
+		var bass_idx: int = int(fmod(t, beat_dur * 4 * 2) / beat_dur) % bass.size()
+		var bass_freq: float = bass[bass_idx]
+		if bass_freq > 0:
+			var bass_env: float = 0.8 if beat_pos < beat_dur * 0.8 else 0.0
+			# Square wave (sign of sine = square)
+			mix += sign(sin(t * bass_freq * TAU)) * 0.12 * bass_env
+
+		# ── Melody (pulse wave — Dr. Mario character) ──
+		var melody_pos: float = fmod(t, sixteenth * melody.size())
+		var mel_idx: int = int(melody_pos / sixteenth) % melody.size()
+		var mel_freq: float = melody[mel_idx]
+		if mel_freq > 0:
+			var mel_note_pos: float = fmod(melody_pos, sixteenth)
+			var mel_env: float = 1.0 if mel_note_pos < sixteenth * 0.7 else 0.0
+			# Pulse wave (25% duty cycle for that classic NES sound)
+			var pulse: float = 1.0 if fmod(t * mel_freq, 1.0) < 0.25 else -1.0
+			mix += pulse * 0.12 * mel_env
+
+		# ── Arpeggio sparkle (triangle wave) ──
+		var arp_pos: float = fmod(t, beat_dur)
+		var arp_idx: int = int(arp_pos / (beat_dur / 8.0)) % arp.size()
+		var arp_freq: float = arp[arp_idx]
+		# Triangle wave
+		var tri: float = (2.0 * absf(2.0 * fmod(t * arp_freq, 1.0) - 1.0) - 1.0)
+		mix += tri * 0.05
+
+		# ── Occasional "data blip" SFX (WISP flair every 2 bars) ──
+		var two_bar: float = fmod(t, beat_dur * 8)
+		if two_bar > beat_dur * 7.5 and two_bar < beat_dur * 7.8:
+			var blip_t: float = two_bar - beat_dur * 7.5
+			mix += sin(blip_t * lerpf(2000.0, 800.0, blip_t / 0.3) * TAU) * 0.08
+
+		samples[i] = int(clampf(mix, -1.0, 1.0) * 28000.0)
 
 	var wav := _samples_to_wav(samples)
 	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD

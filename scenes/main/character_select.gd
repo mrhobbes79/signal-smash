@@ -67,6 +67,10 @@ func _ready() -> void:
 	_draw_node.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_draw_node)
 
+	# Play character select music
+	if AudioManager:
+		AudioManager.play_music_select()
+
 func _process(delta: float) -> void:
 	_time += delta
 	_draw_node.queue_redraw()
@@ -82,12 +86,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				_p1_index = (_p1_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
 				if CHARACTERS[_p1_index]["locked"]:
 					_p1_index = (_p1_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
 			KEY_D:
 				_p1_index = (_p1_index + 1) % CHARACTERS.size()
 				if CHARACTERS[_p1_index]["locked"]:
 					_p1_index = (_p1_index + 1) % CHARACTERS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
 			KEY_SPACE:
 				_p1_ready = true
+				if AudioManager:
+					AudioManager.play_sfx("signal_lock")
 
 	# P2 controls (Arrows + Shift)
 	if not _p2_ready:
@@ -96,12 +106,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				_p2_index = (_p2_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
 				if CHARACTERS[_p2_index]["locked"]:
 					_p2_index = (_p2_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
 			KEY_RIGHT:
 				_p2_index = (_p2_index + 1) % CHARACTERS.size()
 				if CHARACTERS[_p2_index]["locked"]:
 					_p2_index = (_p2_index + 1) % CHARACTERS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
 			KEY_SHIFT:
 				_p2_ready = true
+				if AudioManager:
+					AudioManager.play_sfx("signal_lock")
 
 	# Cancel ready
 	if event.keycode == KEY_ESCAPE:
@@ -113,6 +129,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Both ready — start fight
 	if _p1_ready and _p2_ready:
+		if AudioManager:
+			AudioManager.play_sfx("victory")
+			AudioManager.stop_music()
 		get_tree().change_scene_to_file("res://scenes/fighters/fight_test.tscn")
 
 
