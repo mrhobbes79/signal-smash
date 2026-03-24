@@ -64,6 +64,10 @@ attack={
 ]
 }
 
+[autoload]
+
+AudioManager="*res://scripts/core/audio_manager.gd"
+
 [rendering]
 
 anti_aliasing/quality/msaa_3d=1

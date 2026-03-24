@@ -19,6 +19,10 @@ func enter() -> void:
 	if fighter == null:
 		return
 
+	# Attack SFX
+	if fighter.has_node("/root/AudioManager"):
+		fighter.get_node("/root/AudioManager").play_sfx("hit_heavy", -3.0)
+
 	# Lunge forward
 	var lunge_dir: float = 1.0 if fighter.facing_right else -1.0
 	fighter.velocity.x += lunge_dir * ATTACK_LUNGE

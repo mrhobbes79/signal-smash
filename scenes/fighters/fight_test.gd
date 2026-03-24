@@ -42,6 +42,9 @@ func _ready() -> void:
 	_build_hud()
 	_build_lighting()
 	_build_spectator_hud()
+	# Start fight music
+	if AudioManager:
+		AudioManager.play_music_monterrey()
 
 func _build_arena() -> void:
 	# Main platform (with collision)
@@ -192,6 +195,11 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 			var target = area.get_parent()
 			if target and target.has_method("take_damage") and not target.is_invincible:
 				target.take_damage(ATTACK_DAMAGE, fighter.global_position, ATTACK_KNOCKBACK)
+				# Hit SFX
+				if AudioManager:
+					AudioManager.play_sfx("hit_light")
+					if target.signal_percent <= 0.0:
+						AudioManager.play_sfx("link_down", 3.0)
 				print("[FIGHT] P%d hit P%d! Target signal: %.0f%%" % [
 					fighter.player_id, target.player_id, target.signal_percent])
 	)
@@ -374,6 +382,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		# Back to menu
 		if event.keycode == KEY_ESCAPE:
+			if AudioManager:
+				AudioManager.stop_music()
 			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
 
 	# Player 2 controls (arrow keys + shift/ctrl)

@@ -37,20 +37,34 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	_draw_node.queue_redraw()
+	# Start menu music
+	if not _music_started and AudioManager:
+		AudioManager.play_music_menu()
+		_music_started = true
+
+var _music_started: bool = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			KEY_UP, KEY_W:
 				_selected_index = (_selected_index - 1 + _menu_items.size()) % _menu_items.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
 			KEY_DOWN, KEY_S:
 				_selected_index = (_selected_index + 1) % _menu_items.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
 			KEY_ENTER, KEY_SPACE:
+				if AudioManager:
+					AudioManager.play_sfx("menu_select")
 				_select_item()
 			KEY_ESCAPE:
 				get_tree().quit()
 
 func _select_item() -> void:
+	if AudioManager:
+		AudioManager.stop_music()
 	var path: String = _scene_paths[_selected_index]
 	get_tree().change_scene_to_file(path)
 

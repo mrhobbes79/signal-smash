@@ -6,6 +6,8 @@ func enter() -> void:
 	if fighter:
 		fighter.velocity.y = fighter.JUMP_FORCE
 		fighter.is_grounded = false
+		if Engine.has_singleton("AudioManager") or fighter.has_node("/root/AudioManager"):
+			fighter.get_node("/root/AudioManager").play_sfx("jump")
 
 func physics_update(delta: float) -> void:
 	if fighter == null:
