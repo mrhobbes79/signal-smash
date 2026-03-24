@@ -372,6 +372,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_spectator_hud.visible = _spectator_mode
 			_hud_label.visible = not _spectator_mode
 
+		# Back to menu
+		if event.keycode == KEY_ESCAPE:
+			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
+
 	# Player 2 controls (arrow keys + shift/ctrl)
 	if event is InputEventKey:
 		_handle_p2_input(event)
