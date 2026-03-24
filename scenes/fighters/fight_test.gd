@@ -23,6 +23,8 @@ const AttackStateScript = preload("res://scripts/fighters/states/attack_state.gd
 const HitStateScript = preload("res://scripts/fighters/states/hit_state.gd")
 const KOStateScript = preload("res://scripts/fighters/states/ko_state.gd")
 
+const SpectatorHUDScript = preload("res://scenes/ui/spectator_hud.gd")
+
 const ATTACK_DAMAGE: float = 8.0
 const ATTACK_KNOCKBACK: float = 3.0
 
@@ -30,6 +32,8 @@ var _fighter1: CharacterBody3D
 var _fighter2: CharacterBody3D
 var _camera: Camera3D
 var _hud_label: Label
+var _spectator_hud: CanvasLayer
+var _spectator_mode: bool = false
 
 func _ready() -> void:
 	_build_arena()
@@ -37,6 +41,7 @@ func _ready() -> void:
 	_build_camera()
 	_build_hud()
 	_build_lighting()
+	_build_spectator_hud()
 
 func _build_arena() -> void:
 	# Main platform (with collision)
@@ -268,6 +273,14 @@ func _build_lighting() -> void:
 	sun.shadow_enabled = true
 	add_child(sun)
 
+func _build_spectator_hud() -> void:
+	_spectator_hud = CanvasLayer.new()
+	_spectator_hud.set_script(SpectatorHUDScript)
+	_spectator_hud.fighter1 = _fighter1
+	_spectator_hud.fighter2 = _fighter2
+	_spectator_hud.visible = false
+	add_child(_spectator_hud)
+
 func _build_hud() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.layer = 10
@@ -327,8 +340,8 @@ P1 RICO:  Signal %.0f%%  |  Damage %.0f  |  State: %s
 P2 VERO:  Signal %.0f%%  |  Damage %.0f  |  State: %s
 
 Controls P1: WASD move | SPACE jump | J attack
-Controls P2: Arrows move | RShift jump | RCtrl attack
-R = Reset fighters""" % [
+Controls P2: Arrows move | Shift jump | Ctrl/L attack
+TAB = Toggle NOC Dashboard Spectator | R = Reset""" % [
 		_fighter1.signal_percent, _fighter1.damage_accumulated, state1,
 		_fighter2.signal_percent, _fighter2.damage_accumulated, state2
 	]
@@ -345,14 +358,21 @@ func _update_camera() -> void:
 		Vector3(center.x, center.y + 4.0, target_z), 0.05)
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Reset fighters
-	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
-		_fighter1.position = Vector3(-3.0, 1.0, 0.0)
-		_fighter1.reset_fighter()
-		_fighter2.position = Vector3(3.0, 1.0, 0.0)
-		_fighter2.reset_fighter()
+	if event is InputEventKey and event.pressed:
+		# Reset fighters
+		if event.keycode == KEY_R:
+			_fighter1.position = Vector3(-3.0, 1.0, 0.0)
+			_fighter1.reset_fighter()
+			_fighter2.position = Vector3(3.0, 1.0, 0.0)
+			_fighter2.reset_fighter()
 
-	# Player 2 controls (arrow keys + right shift/ctrl)
+		# Toggle spectator mode
+		if event.keycode == KEY_TAB:
+			_spectator_mode = not _spectator_mode
+			_spectator_hud.visible = _spectator_mode
+			_hud_label.visible = not _spectator_mode
+
+	# Player 2 controls (arrow keys + shift/ctrl)
 	if event is InputEventKey:
 		_handle_p2_input(event)
 
