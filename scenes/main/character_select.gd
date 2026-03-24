@@ -127,12 +127,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
 
-	# Both ready — start fight
+	# Both ready — go to loadout screen
 	if _p1_ready and _p2_ready:
 		if AudioManager:
-			AudioManager.play_sfx("victory")
-			AudioManager.stop_music()
-		get_tree().change_scene_to_file("res://scenes/fighters/fight_test.tscn")
+			AudioManager.play_sfx("menu_select")
+		get_tree().change_scene_to_file("res://scenes/main/loadout_screen.tscn")
 
 
 class _SelectDraw extends Control:

@@ -1,0 +1,55 @@
+{
+  "vendor": "Cambium",
+  "color": "#1E40AF",
+  "description": "Known for long-range reliability",
+  "equipment": [
+    {
+      "id": "cambium_radio_01",
+      "type": "radio",
+      "model_name": "ePMP 3000",
+      "stat_range": 15,
+      "stat_speed": -5,
+      "stat_stability": 5,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "long_range_beam",
+      "description": "Long-range access point with GPS sync"
+    },
+    {
+      "id": "cambium_antenna_01",
+      "type": "antenna",
+      "model_name": "ePMP Force 300",
+      "stat_range": 10,
+      "stat_speed": 0,
+      "stat_stability": 5,
+      "stat_power": 5,
+      "rarity": "common",
+      "special_passive": "",
+      "description": "High-gain integrated antenna"
+    },
+    {
+      "id": "cambium_router_01",
+      "type": "router",
+      "model_name": "cnPilot R201",
+      "stat_range": 0,
+      "stat_speed": 5,
+      "stat_stability": 10,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "stable_link",
+      "description": "Enterprise-grade indoor router"
+    },
+    {
+      "id": "cambium_radio_02",
+      "type": "radio",
+      "model_name": "PMP 450m",
+      "stat_range": 20,
+      "stat_speed": 0,
+      "stat_stability": 10,
+      "stat_power": 5,
+      "rarity": "rare",
+      "special_passive": "massive_mimo",
+      "description": "MU-MIMO sector with 14 antenna elements"
+    }
+  ]
+}

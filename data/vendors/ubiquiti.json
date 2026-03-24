@@ -1,0 +1,43 @@
+{
+  "vendor": "Ubiquiti",
+  "color": "#3B82F6",
+  "description": "Known for speed and affordability",
+  "equipment": [
+    {
+      "id": "ubiquiti_radio_01",
+      "type": "radio",
+      "model_name": "airMAX LiteBeam",
+      "stat_range": 5,
+      "stat_speed": 15,
+      "stat_stability": -5,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "quick_link",
+      "description": "Lightweight high-speed CPE"
+    },
+    {
+      "id": "ubiquiti_antenna_01",
+      "type": "antenna",
+      "model_name": "airFiber 60",
+      "stat_range": 5,
+      "stat_speed": 10,
+      "stat_stability": 0,
+      "stat_power": 5,
+      "rarity": "common",
+      "special_passive": "",
+      "description": "60 GHz point-to-point link"
+    },
+    {
+      "id": "ubiquiti_router_01",
+      "type": "router",
+      "model_name": "EdgeRouter X",
+      "stat_range": 0,
+      "stat_speed": 10,
+      "stat_stability": 5,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "fast_routing",
+      "description": "Budget-friendly gigabit router"
+    }
+  ]
+}
