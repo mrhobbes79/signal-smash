@@ -251,7 +251,7 @@ class _SpectatorDraw extends Control:
 
 		# Signal dBm
 		var dbm: float = -90.0 + signal_pct * 0.5
-		var sig_col := signal_color(signal_pct)
+		var sig_col: Color = hud.signal_color(signal_pct)
 		draw_string(font, Vector2(pos.x + width - 150, pos.y + 28), "%.0f dBm" % dbm, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, sig_col)
 
 		# Signal bar
