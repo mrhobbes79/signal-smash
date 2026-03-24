@@ -46,17 +46,25 @@ func _setup_music_player() -> void:
 func _generate_sfx_cache() -> void:
 	_sfx_cache["hit_light"] = _gen_hit(0.15, 200.0, 0.6)
 	_sfx_cache["hit_heavy"] = _gen_hit(0.25, 120.0, 0.9)
+	_sfx_cache["hit_critical"] = _gen_hit(0.35, 80.0, 1.0)
 	_sfx_cache["ko"] = _gen_ko()
 	_sfx_cache["jump"] = _gen_sweep(0.12, 300.0, 600.0, 0.3)
+	_sfx_cache["double_jump"] = _gen_sweep(0.1, 500.0, 900.0, 0.25)
 	_sfx_cache["land"] = _gen_noise_burst(0.08, 0.3)
+	_sfx_cache["dodge"] = _gen_sweep(0.08, 600.0, 200.0, 0.2)
 	_sfx_cache["menu_move"] = _gen_beep(0.05, 800.0, 0.2)
 	_sfx_cache["menu_select"] = _gen_beep(0.1, 1200.0, 0.3)
+	_sfx_cache["menu_back"] = _gen_sweep(0.08, 600.0, 300.0, 0.2)
 	_sfx_cache["signal_lock"] = _gen_signal_lock()
 	_sfx_cache["link_down"] = _gen_link_down()
 	_sfx_cache["modem"] = _gen_modem_handshake()
 	_sfx_cache["align_beep"] = _gen_beep(0.06, 1000.0, 0.2)
 	_sfx_cache["score"] = _gen_sweep(0.15, 400.0, 800.0, 0.3)
 	_sfx_cache["victory"] = _gen_victory()
+	_sfx_cache["equip"] = _gen_equip()
+	_sfx_cache["countdown"] = _gen_beep(0.08, 660.0, 0.35)
+	_sfx_cache["fight_start"] = _gen_fight_start()
+	_sfx_cache["round_end"] = _gen_round_end()
 
 ## Play a cached SFX
 func play_sfx(sfx_name: String, volume_db: float = 0.0) -> void:
@@ -104,6 +112,13 @@ func play_music_select() -> void:
 	if _is_music_playing:
 		stop_music()
 	_music_player.stream = _gen_select_theme()
+	_music_player.play()
+	_is_music_playing = true
+
+func play_music_loadout() -> void:
+	if _is_music_playing:
+		stop_music()
+	_music_player.stream = _gen_loadout_theme()
 	_music_player.play()
 	_is_music_playing = true
 
@@ -389,6 +404,106 @@ func _gen_select_theme() -> AudioStreamWAV:
 		if two_bar > beat_dur * 7.5 and two_bar < beat_dur * 7.8:
 			var blip_t: float = two_bar - beat_dur * 7.5
 			mix += sin(blip_t * lerpf(2000.0, 800.0, blip_t / 0.3) * TAU) * 0.08
+
+		samples[i] = int(clampf(mix, -1.0, 1.0) * 28000.0)
+
+	var wav := _samples_to_wav(samples)
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	wav.loop_end = samples.size()
+	return wav
+
+func _gen_equip() -> AudioStreamWAV:
+	# Mechanical click + data transfer chirp — equipping gear
+	var duration: float = 0.2
+	var samples := _make_samples(duration)
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var click: float = randf_range(-1.0, 1.0) * exp(-t * 80.0) * 0.4
+		var chirp: float = sin(t * lerpf(800.0, 1600.0, t / duration) * TAU) * exp(-t * 15.0) * 0.3
+		samples[i] = int((click + chirp) * 32000.0)
+	return _samples_to_wav(samples)
+
+func _gen_fight_start() -> AudioStreamWAV:
+	# Rising power-up sweep + impact — "FIGHT!"
+	var duration: float = 0.5
+	var samples := _make_samples(duration)
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var sweep: float = sin(t * lerpf(200.0, 1200.0, t / duration) * TAU) * 0.4
+		var impact: float = 0.0
+		if t > 0.35:
+			var it: float = t - 0.35
+			impact = sin(it * 100.0 * TAU) * exp(-it * 20.0) * 0.5
+			impact += randf_range(-1.0, 1.0) * exp(-it * 15.0) * 0.3
+		var envelope: float = minf(t * 10.0, 1.0)
+		samples[i] = int((sweep * envelope + impact) * 30000.0)
+	return _samples_to_wav(samples)
+
+func _gen_round_end() -> AudioStreamWAV:
+	# Descending whistle + crowd — round over
+	var duration: float = 0.6
+	var samples := _make_samples(duration)
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var whistle: float = sin(t * lerpf(1000.0, 400.0, t / duration) * TAU) * 0.3
+		var crowd: float = randf_range(-1.0, 1.0) * 0.15 * (1.0 - t / duration)
+		var envelope: float = 1.0 - (t / duration) * 0.5
+		samples[i] = int((whistle + crowd) * 32000.0 * envelope)
+	return _samples_to_wav(samples)
+
+func _gen_loadout_theme() -> AudioStreamWAV:
+	# Techy ambient — data center vibe with subtle groove. Perfect for equipment browsing.
+	var bpm: float = 100.0
+	var beat_dur: float = 60.0 / bpm
+	var duration: float = beat_dur * 4 * 4  # 4 bars
+	var samples := _make_samples(duration)
+
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var beat_pos: float = fmod(t, beat_dur)
+		var bar_beat: int = int(fmod(t, beat_dur * 4) / beat_dur)
+		var mix: float = 0.0
+
+		# Soft kick (1 and 3)
+		if bar_beat == 0 or bar_beat == 2:
+			if beat_pos < 0.08:
+				mix += sin(beat_pos * lerpf(100.0, 40.0, beat_pos / 0.08) * TAU) * exp(-beat_pos * 25.0) * 0.3
+
+		# Rim click (2 and 4)
+		if bar_beat == 1 or bar_beat == 3:
+			if beat_pos < 0.02:
+				mix += sin(beat_pos * 1800.0 * TAU) * exp(-beat_pos * 100.0) * 0.15
+
+		# 16th note hi-hat pattern (soft, techy)
+		var sixteenth: float = fmod(t, beat_dur / 4.0)
+		if sixteenth < 0.01:
+			mix += randf_range(-1.0, 1.0) * exp(-sixteenth * 200.0) * 0.06
+
+		# Deep bass pad (Am — dark, sustained)
+		mix += sin(t * 55.0 * TAU) * 0.12  # A1
+		mix += sin(t * 65.4 * TAU) * 0.06  # C2
+
+		# Ambient pad (Am7 — ethereal)
+		var pad_env: float = 0.5 + sin(t * 0.3 * TAU) * 0.3
+		mix += sin(t * 220.0 * TAU) * 0.04 * pad_env
+		mix += sin(t * 261.6 * TAU) * 0.03 * pad_env
+		mix += sin(t * 329.6 * TAU) * 0.03 * pad_env
+		mix += sin(t * 392.0 * TAU) * 0.02 * pad_env  # G4 for Am7
+
+		# Data chirps (random techy sounds every 2 beats)
+		var two_beat: float = fmod(t, beat_dur * 2)
+		if two_beat > beat_dur * 1.75 and two_beat < beat_dur * 1.85:
+			var chirp_t: float = two_beat - beat_dur * 1.75
+			mix += sin(chirp_t * lerpf(1500.0, 3000.0, chirp_t / 0.1) * TAU) * 0.04 * exp(-chirp_t * 30.0)
+
+		# Subtle arpeggio (triangle wave, every other bar)
+		var two_bar: float = fmod(t, beat_dur * 8)
+		if two_bar > beat_dur * 4:
+			var arp_notes: Array[float] = [220.0, 261.6, 329.6, 392.0, 329.6, 261.6]
+			var arp_idx: int = int(fmod(two_bar, beat_dur * 2) / (beat_dur / 3.0)) % arp_notes.size()
+			var arp_freq: float = arp_notes[arp_idx]
+			var tri: float = (2.0 * absf(2.0 * fmod(t * arp_freq, 1.0) - 1.0) - 1.0)
+			mix += tri * 0.03
 
 		samples[i] = int(clampf(mix, -1.0, 1.0) * 28000.0)
 

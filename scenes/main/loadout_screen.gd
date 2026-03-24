@@ -57,6 +57,10 @@ func _ready() -> void:
 	_draw_node.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_draw_node)
 
+	# Play loadout music
+	if AudioManager:
+		AudioManager.play_music_loadout()
+
 func _process(delta: float) -> void:
 	_time += delta
 	_draw_node.queue_redraw()
@@ -81,12 +85,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_p1_item_index[slot] = (_p1_item_index[slot] - 1 + _items_by_type[slot].size()) % _items_by_type[slot].size()
 				_p1_equipped[slot] = _items_by_type[slot][_p1_item_index[slot]]
 				if AudioManager:
-					AudioManager.play_sfx("align_beep")
+					AudioManager.play_sfx("equip")
 			KEY_D:
 				_p1_item_index[slot] = (_p1_item_index[slot] + 1) % _items_by_type[slot].size()
 				_p1_equipped[slot] = _items_by_type[slot][_p1_item_index[slot]]
 				if AudioManager:
-					AudioManager.play_sfx("align_beep")
+					AudioManager.play_sfx("equip")
 			KEY_SPACE:
 				_p1_ready = true
 				if AudioManager:
@@ -108,12 +112,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_p2_item_index[slot2] = (_p2_item_index[slot2] - 1 + _items_by_type[slot2].size()) % _items_by_type[slot2].size()
 				_p2_equipped[slot2] = _items_by_type[slot2][_p2_item_index[slot2]]
 				if AudioManager:
-					AudioManager.play_sfx("align_beep")
+					AudioManager.play_sfx("equip")
 			KEY_RIGHT:
 				_p2_item_index[slot2] = (_p2_item_index[slot2] + 1) % _items_by_type[slot2].size()
 				_p2_equipped[slot2] = _items_by_type[slot2][_p2_item_index[slot2]]
 				if AudioManager:
-					AudioManager.play_sfx("align_beep")
+					AudioManager.play_sfx("equip")
 			KEY_SHIFT:
 				_p2_ready = true
 				if AudioManager:
@@ -130,7 +134,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Both ready
 	if _p1_ready and _p2_ready:
 		if AudioManager:
-			AudioManager.play_sfx("victory")
+			AudioManager.play_sfx("fight_start")
 			AudioManager.stop_music()
 		get_tree().change_scene_to_file("res://scenes/fighters/fight_test.tscn")
 
