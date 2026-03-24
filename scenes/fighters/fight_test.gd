@@ -114,39 +114,20 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 	col_shape.position.y = 0.6
 	fighter.add_child(col_shape)
 
-	# Model (procedural blockout)
+	# Model (detailed procedural character)
 	var model_node := Node3D.new()
 	model_node.name = "Model"
 
-	var body := ProceduralMesh.create_capsule(0.3, 0.9, primary)
-	body.position.y = 0.6
-	model_node.add_child(body)
-
-	var head := ProceduralMesh.create_sphere(0.22, 8, Color("#D4A574"))
-	head.position.y = 1.35
-	model_node.add_child(head)
-
-	var arm_l := ProceduralMesh.create_cylinder(0.08, 0.5, 6, secondary)
-	arm_l.position = Vector3(-0.42, 0.65, 0.0)
-	model_node.add_child(arm_l)
-
-	var arm_r := ProceduralMesh.create_cylinder(0.08, 0.5, 6, secondary)
-	arm_r.position = Vector3(0.42, 0.65, 0.0)
-	model_node.add_child(arm_r)
-
-	var leg_l := ProceduralMesh.create_cylinder(0.1, 0.5, 6, secondary)
-	leg_l.position = Vector3(-0.15, 0.15, 0.0)
-	model_node.add_child(leg_l)
-
-	var leg_r := ProceduralMesh.create_cylinder(0.1, 0.5, 6, secondary)
-	leg_r.position = Vector3(0.15, 0.15, 0.0)
-	model_node.add_child(leg_r)
+	if fighter_name == "RICO":
+		_build_rico_model(model_node, primary, secondary, accent)
+	else:
+		_build_vero_model(model_node, primary, secondary, accent)
 
 	# Name label
 	var label := Label3D.new()
 	label.text = fighter_name
-	label.font_size = 40
-	label.position.y = 1.8
+	label.font_size = 36
+	label.position.y = 2.0
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.modulate = accent
 	label.outline_size = 4
@@ -410,3 +391,252 @@ func _handle_p2_input(event: InputEventKey) -> void:
 	# P2 attack (Right Ctrl or L key for easier testing)
 	if event.pressed and (event.keycode == KEY_CTRL or event.keycode == KEY_L):
 		f2_sm._on_state_transition("attack")
+
+## ═══════════ CHARACTER MODELS ═══════════
+
+func _build_rico_model(model: Node3D, primary: Color, secondary: Color, accent: Color) -> void:
+	## Rico — Cable Specialist. Blue/yellow. Hard hat, cable whip on belt, tool pouch.
+
+	# Boots (dark brown, chunky)
+	var boot_l := ProceduralMesh.create_box(Vector3(0.14, 0.15, 0.2), Color("#3B2507"))
+	boot_l.position = Vector3(-0.15, 0.08, 0.02)
+	model.add_child(boot_l)
+	var boot_r := ProceduralMesh.create_box(Vector3(0.14, 0.15, 0.2), Color("#3B2507"))
+	boot_r.position = Vector3(0.15, 0.08, 0.02)
+	model.add_child(boot_r)
+
+	# Legs (work pants — secondary color)
+	var leg_l := ProceduralMesh.create_cylinder(0.09, 0.45, 6, secondary)
+	leg_l.position = Vector3(-0.15, 0.38, 0.0)
+	model.add_child(leg_l)
+	var leg_r := ProceduralMesh.create_cylinder(0.09, 0.45, 6, secondary)
+	leg_r.position = Vector3(0.15, 0.38, 0.0)
+	model.add_child(leg_r)
+
+	# Belt
+	var belt := ProceduralMesh.create_cylinder(0.32, 0.06, 8, Color("#1C1917"))
+	belt.position.y = 0.6
+	model.add_child(belt)
+
+	# Belt buckle (accent)
+	var buckle := ProceduralMesh.create_box(Vector3(0.08, 0.06, 0.05), accent)
+	buckle.position = Vector3(0.0, 0.6, 0.3)
+	model.add_child(buckle)
+
+	# Tool pouch on belt (right side)
+	var pouch := ProceduralMesh.create_box(Vector3(0.1, 0.12, 0.08), Color("#78350F"))
+	pouch.position = Vector3(0.32, 0.58, 0.0)
+	model.add_child(pouch)
+
+	# Torso (work shirt — primary blue)
+	var torso := ProceduralMesh.create_box(Vector3(0.5, 0.45, 0.3), primary)
+	torso.position.y = 0.88
+	model.add_child(torso)
+
+	# Shirt collar (lighter blue)
+	var collar := ProceduralMesh.create_box(Vector3(0.3, 0.06, 0.22), primary.lightened(0.2))
+	collar.position.y = 1.13
+	model.add_child(collar)
+
+	# Arms (sleeves — primary color)
+	var arm_l := ProceduralMesh.create_cylinder(0.08, 0.45, 6, primary)
+	arm_l.position = Vector3(-0.34, 0.75, 0.0)
+	arm_l.rotation_degrees.z = 12.0
+	model.add_child(arm_l)
+	var arm_r := ProceduralMesh.create_cylinder(0.08, 0.45, 6, primary)
+	arm_r.position = Vector3(0.34, 0.75, 0.0)
+	arm_r.rotation_degrees.z = -12.0
+	model.add_child(arm_r)
+
+	# Gloves (accent yellow)
+	var glove_l := ProceduralMesh.create_sphere(0.09, 6, accent)
+	glove_l.position = Vector3(-0.38, 0.52, 0.0)
+	model.add_child(glove_l)
+	var glove_r := ProceduralMesh.create_sphere(0.09, 6, accent)
+	glove_r.position = Vector3(0.38, 0.52, 0.0)
+	model.add_child(glove_r)
+
+	# Neck
+	var neck := ProceduralMesh.create_cylinder(0.08, 0.1, 6, Color("#D4A574"))
+	neck.position.y = 1.18
+	model.add_child(neck)
+
+	# Head
+	var head := ProceduralMesh.create_sphere(0.22, 8, Color("#D4A574"))
+	head.position.y = 1.38
+	model.add_child(head)
+
+	# Eyes
+	var eye_l := ProceduralMesh.create_sphere(0.045, 6, Color.WHITE)
+	eye_l.position = Vector3(-0.09, 1.42, 0.18)
+	model.add_child(eye_l)
+	var pupil_l := ProceduralMesh.create_sphere(0.025, 6, Color.BLACK)
+	pupil_l.position = Vector3(-0.09, 1.42, 0.22)
+	model.add_child(pupil_l)
+	var eye_r := ProceduralMesh.create_sphere(0.045, 6, Color.WHITE)
+	eye_r.position = Vector3(0.09, 1.42, 0.18)
+	model.add_child(eye_r)
+	var pupil_r := ProceduralMesh.create_sphere(0.025, 6, Color.BLACK)
+	pupil_r.position = Vector3(0.09, 1.42, 0.22)
+	model.add_child(pupil_r)
+
+	# Mouth (small dark line)
+	var mouth := ProceduralMesh.create_box(Vector3(0.1, 0.02, 0.02), Color("#7C3030"))
+	mouth.position = Vector3(0.0, 1.32, 0.2)
+	model.add_child(mouth)
+
+	# Hard hat (safety helmet — accent yellow)
+	var hat_brim := ProceduralMesh.create_cylinder(0.28, 0.04, 8, accent)
+	hat_brim.position.y = 1.52
+	model.add_child(hat_brim)
+	var hat_dome := ProceduralMesh.create_sphere(0.22, 8, accent)
+	hat_dome.position.y = 1.58
+	model.add_child(hat_dome)
+
+	# Cable whip on back (coiled fiber — accent)
+	var cable_coil := ProceduralMesh.create_cylinder(0.12, 0.2, 8, accent)
+	cable_coil.position = Vector3(0.0, 0.9, -0.25)
+	cable_coil.rotation_degrees.x = 15.0
+	model.add_child(cable_coil)
+
+	# Cable hanging end
+	var cable_end := ProceduralMesh.create_cylinder(0.015, 0.35, 4, accent)
+	cable_end.position = Vector3(0.1, 0.7, -0.28)
+	cable_end.rotation_degrees.z = -30.0
+	model.add_child(cable_end)
+
+	# Company badge on chest
+	var badge := ProceduralMesh.create_box(Vector3(0.1, 0.08, 0.02), Color.WHITE)
+	badge.position = Vector3(-0.12, 1.0, 0.17)
+	model.add_child(badge)
+
+func _build_vero_model(model: Node3D, primary: Color, secondary: Color, accent: Color) -> void:
+	## Ing. Vero — Spectrum Engineer. Purple/cyan. Visor, spectrum scanner, lab coat style.
+
+	# Boots (professional — dark purple)
+	var boot_l := ProceduralMesh.create_box(Vector3(0.12, 0.13, 0.18), secondary)
+	boot_l.position = Vector3(-0.13, 0.07, 0.02)
+	model.add_child(boot_l)
+	var boot_r := ProceduralMesh.create_box(Vector3(0.12, 0.13, 0.18), secondary)
+	boot_r.position = Vector3(0.13, 0.07, 0.02)
+	model.add_child(boot_r)
+
+	# Legs (dark pants)
+	var leg_l := ProceduralMesh.create_cylinder(0.08, 0.42, 6, secondary)
+	leg_l.position = Vector3(-0.13, 0.35, 0.0)
+	model.add_child(leg_l)
+	var leg_r := ProceduralMesh.create_cylinder(0.08, 0.42, 6, secondary)
+	leg_r.position = Vector3(0.13, 0.35, 0.0)
+	model.add_child(leg_r)
+
+	# Belt (thin, tech-style)
+	var belt := ProceduralMesh.create_cylinder(0.28, 0.04, 8, accent)
+	belt.position.y = 0.58
+	model.add_child(belt)
+
+	# Torso (lab coat / tech jacket — primary purple)
+	var torso := ProceduralMesh.create_box(Vector3(0.46, 0.48, 0.28), primary)
+	torso.position.y = 0.85
+	model.add_child(torso)
+
+	# Lab coat flaps (slightly lighter, extend below torso)
+	var flap_l := ProceduralMesh.create_box(Vector3(0.15, 0.15, 0.12), primary.lightened(0.1))
+	flap_l.position = Vector3(-0.15, 0.58, 0.1)
+	model.add_child(flap_l)
+	var flap_r := ProceduralMesh.create_box(Vector3(0.15, 0.15, 0.12), primary.lightened(0.1))
+	flap_r.position = Vector3(0.15, 0.58, 0.1)
+	model.add_child(flap_r)
+
+	# Spectrum scanner on chest (glowing cyan device)
+	var scanner := ProceduralMesh.create_box(Vector3(0.15, 0.1, 0.05), accent)
+	scanner.position = Vector3(0.1, 0.95, 0.17)
+	model.add_child(scanner)
+	# Scanner screen (darker center)
+	var screen := ProceduralMesh.create_box(Vector3(0.1, 0.06, 0.01), Color("#0F172A"))
+	screen.position = Vector3(0.1, 0.95, 0.2)
+	model.add_child(screen)
+
+	# Arms (jacket sleeves)
+	var arm_l := ProceduralMesh.create_cylinder(0.07, 0.42, 6, primary)
+	arm_l.position = Vector3(-0.3, 0.72, 0.0)
+	arm_l.rotation_degrees.z = 10.0
+	model.add_child(arm_l)
+	var arm_r := ProceduralMesh.create_cylinder(0.07, 0.42, 6, primary)
+	arm_r.position = Vector3(0.3, 0.72, 0.0)
+	arm_r.rotation_degrees.z = -10.0
+	model.add_child(arm_r)
+
+	# Hands (tech gloves — accent cyan)
+	var hand_l := ProceduralMesh.create_sphere(0.07, 6, accent)
+	hand_l.position = Vector3(-0.33, 0.5, 0.0)
+	model.add_child(hand_l)
+	var hand_r := ProceduralMesh.create_sphere(0.07, 6, accent)
+	hand_r.position = Vector3(0.33, 0.5, 0.0)
+	model.add_child(hand_r)
+
+	# Handheld scanner in right hand
+	var handheld := ProceduralMesh.create_box(Vector3(0.05, 0.15, 0.03), Color("#1E293B"))
+	handheld.position = Vector3(0.35, 0.45, 0.05)
+	model.add_child(handheld)
+	var handheld_screen := ProceduralMesh.create_box(Vector3(0.04, 0.06, 0.01), accent)
+	handheld_screen.position = Vector3(0.35, 0.5, 0.07)
+	model.add_child(handheld_screen)
+
+	# Neck
+	var neck := ProceduralMesh.create_cylinder(0.07, 0.08, 6, Color("#C4956A"))
+	neck.position.y = 1.13
+	model.add_child(neck)
+
+	# Head
+	var head := ProceduralMesh.create_sphere(0.21, 8, Color("#C4956A"))
+	head.position.y = 1.32
+	model.add_child(head)
+
+	# Hair (dark, tied back — shorter on sides)
+	var hair := ProceduralMesh.create_sphere(0.22, 8, Color("#1C1917"))
+	hair.position = Vector3(0.0, 1.38, -0.03)
+	model.add_child(hair)
+	# Ponytail
+	var ponytail := ProceduralMesh.create_cylinder(0.04, 0.2, 4, Color("#1C1917"))
+	ponytail.position = Vector3(0.0, 1.28, -0.2)
+	ponytail.rotation_degrees.x = 30.0
+	model.add_child(ponytail)
+
+	# Eyes
+	var eye_l := ProceduralMesh.create_sphere(0.04, 6, Color.WHITE)
+	eye_l.position = Vector3(-0.08, 1.36, 0.17)
+	model.add_child(eye_l)
+	var pupil_l := ProceduralMesh.create_sphere(0.022, 6, Color.BLACK)
+	pupil_l.position = Vector3(-0.08, 1.36, 0.21)
+	model.add_child(pupil_l)
+	var eye_r := ProceduralMesh.create_sphere(0.04, 6, Color.WHITE)
+	eye_r.position = Vector3(0.08, 1.36, 0.17)
+	model.add_child(eye_r)
+	var pupil_r := ProceduralMesh.create_sphere(0.022, 6, Color.BLACK)
+	pupil_r.position = Vector3(0.08, 1.36, 0.21)
+	model.add_child(pupil_r)
+
+	# Spectrum visor (cyan translucent band across eyes)
+	var visor := ProceduralMesh.create_box(Vector3(0.3, 0.06, 0.05), Color(accent, 0.7))
+	visor.position = Vector3(0.0, 1.37, 0.18)
+	model.add_child(visor)
+
+	# Antenna array on back (spectrum analysis equipment)
+	var backpack := ProceduralMesh.create_box(Vector3(0.2, 0.25, 0.12), Color("#1E293B"))
+	backpack.position = Vector3(0.0, 0.9, -0.22)
+	model.add_child(backpack)
+	# Small antennas on backpack
+	var ant1 := ProceduralMesh.create_cylinder(0.015, 0.25, 4, accent)
+	ant1.position = Vector3(-0.06, 1.15, -0.22)
+	model.add_child(ant1)
+	var ant2 := ProceduralMesh.create_cylinder(0.015, 0.2, 4, accent)
+	ant2.position = Vector3(0.06, 1.12, -0.22)
+	model.add_child(ant2)
+
+	# ID badge
+	var badge := ProceduralMesh.create_box(Vector3(0.08, 0.1, 0.02), Color.WHITE)
+	badge.position = Vector3(-0.15, 0.98, 0.16)
+	model.add_child(badge)
+	var badge_text := ProceduralMesh.create_box(Vector3(0.06, 0.03, 0.01), primary)
+	badge_text.position = Vector3(-0.15, 0.96, 0.18)
+	model.add_child(badge_text)
