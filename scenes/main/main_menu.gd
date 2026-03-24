@@ -13,7 +13,7 @@ var _selected_index: int = 0
 var _menu_items: Array[String] = ["TOURNAMENT", "CONFERENCE MODE", "MINI-GAME TEST", "ART TEST"]
 var _scene_paths: Array[String] = [
 	"res://scenes/main/character_select.tscn",
-	"res://scenes/fighters/fight_test.tscn",
+	"res://scenes/main/conference_mode.tscn",
 	"res://scenes/minigames/minigame_test.tscn",
 	"res://scenes/art_test/art_style_test.tscn",
 ]
