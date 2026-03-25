@@ -20,7 +20,16 @@ func physics_update(delta: float) -> void:
 	if not fighter.is_on_floor():
 		transitioned.emit("fall")
 
+	# Gamepad buttons
+	if fighter.device_id >= 0:
+		if fighter.is_device_button_pressed(JOY_BUTTON_A) and fighter.is_on_floor():
+			transitioned.emit("jump")
+		elif fighter.is_device_button_pressed(JOY_BUTTON_X):
+			transitioned.emit("attack")
+
 func handle_input(event: InputEvent) -> void:
+	if fighter and fighter.device_id >= 0:
+		return
 	if event.is_action_pressed("jump") and fighter.is_on_floor():
 		transitioned.emit("jump")
 	elif event.is_action_pressed("attack"):

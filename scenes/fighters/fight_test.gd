@@ -236,12 +236,39 @@ func _build_fighters() -> void:
 
 	_fighter2 = _create_fighter(2, Vector3(3.0, 1.0, 0.0), Color("#7C3AED"), Color("#4C1D95"), Color("#06B6D4"), "VERO")
 	_fighter2.set("facing_right", false)
-	_fighter2.set("use_manual_input", true)
 	add_child(_fighter2)
-	# Disable P2 state machine input processing (P2 uses manual controls)
-	var f2_sm = _fighter2.get_node_or_null("StateMachine")
-	if f2_sm:
-		f2_sm.process_input = false
+
+	# Assign controllers from InputManager
+	_assign_controllers()
+
+func _assign_controllers() -> void:
+	if InputManager == null:
+		# Fallback: P1 keyboard, P2 manual keyboard
+		_fighter2.set("use_manual_input", true)
+		var f2_sm = _fighter2.get_node_or_null("StateMachine")
+		if f2_sm:
+			f2_sm.process_input = false
+		return
+
+	var p1_device: int = InputManager.get_device(0)
+	var p2_device: int = InputManager.get_device(1)
+
+	# P1: keyboard (-1) or gamepad
+	_fighter1.set("device_id", p1_device)
+
+	# P2: if gamepad assigned, use it directly; otherwise manual keyboard
+	if p2_device >= 0:
+		# P2 has a gamepad — use device-based input
+		_fighter2.set("device_id", p2_device)
+		_fighter2.set("use_manual_input", false)
+		print("[FIGHT] P2 using gamepad: %s" % InputManager.get_controller_name(p2_device))
+	else:
+		# P2 on keyboard (arrows) — manual input
+		_fighter2.set("use_manual_input", true)
+		var f2_sm = _fighter2.get_node_or_null("StateMachine")
+		if f2_sm:
+			f2_sm.process_input = false
+		print("[FIGHT] P2 using keyboard (arrows)")
 
 func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, accent: Color, fighter_name: String) -> CharacterBody3D:
 	var fighter: CharacterBody3D = CharacterBody3D.new()
