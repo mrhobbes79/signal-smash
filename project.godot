@@ -22,6 +22,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 AudioManager="*res://scripts/core/audio_manager.gd"
+LocaleManager="*res://scripts/core/locale_manager.gd"
 
 [display]
 

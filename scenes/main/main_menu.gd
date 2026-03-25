@@ -10,7 +10,7 @@ const TEXT := Color("#E2E8F0")
 const P1_COLOR := Color("#2563EB")
 
 var _selected_index: int = 0
-var _menu_items: Array[String] = ["TOURNAMENT", "CONFERENCE MODE", "MINI-GAME TEST", "ART TEST"]
+var _menu_keys: Array[String] = ["MENU_TOURNAMENT", "MENU_CONFERENCE", "MENU_MINIGAME", "MENU_ART_TEST"]
 var _scene_paths: Array[String] = [
 	"res://scenes/main/character_select.tscn",
 	"res://scenes/main/conference_mode.tscn",
@@ -48,17 +48,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			KEY_UP, KEY_W:
-				_selected_index = (_selected_index - 1 + _menu_items.size()) % _menu_items.size()
+				_selected_index = (_selected_index - 1 + _menu_keys.size()) % _menu_keys.size()
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_DOWN, KEY_S:
-				_selected_index = (_selected_index + 1) % _menu_items.size()
+				_selected_index = (_selected_index + 1) % _menu_keys.size()
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_ENTER, KEY_SPACE:
 				if AudioManager:
 					AudioManager.play_sfx("menu_select")
 				_select_item()
+			KEY_F10:
+				if LocaleManager:
+					LocaleManager.cycle_language()
+					if AudioManager:
+						AudioManager.play_sfx("equip")
 			KEY_ESCAPE:
 				get_tree().quit()
 
@@ -93,7 +98,8 @@ class _MenuDraw extends Control:
 		draw_string(font, Vector2(s.x / 2.0 + 30, title_y), "SMASH", HORIZONTAL_ALIGNMENT_LEFT, -1, 72, WARN)
 
 		# Subtitle
-		draw_string(font, Vector2(s.x / 2.0 - 200, title_y + 40), "The Connectathon // WISP Tournament", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(TEXT, 0.6))
+		var subtitle: String = LocaleManager.t("GAME_SUBTITLE") if LocaleManager else "The Connectathon // WISP Tournament"
+		draw_string(font, Vector2(s.x / 2.0 - 200, title_y + 40), subtitle, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(TEXT, 0.6))
 
 		# Bottom glow line
 		draw_rect(Rect2(s.x * 0.15, title_y + 55, s.x * 0.7, 2), glow_color)
@@ -102,9 +108,10 @@ class _MenuDraw extends Control:
 		var menu_start_y: float = s.y * 0.45
 		var item_height: float = 60.0
 
-		for i in range(menu._menu_items.size()):
+		for i in range(menu._menu_keys.size()):
 			var item_y: float = menu_start_y + i * item_height
 			var is_selected: bool = i == menu._selected_index
+			var item_text: String = LocaleManager.t(menu._menu_keys[i]) if LocaleManager else menu._menu_keys[i]
 
 			if is_selected:
 				# Selection highlight
@@ -114,19 +121,26 @@ class _MenuDraw extends Control:
 				# Arrow indicator
 				draw_string(font, Vector2(s.x * 0.25 + 10, item_y), "▶", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, ACCENT)
 				# Selected text
-				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), menu._menu_items[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 28, ACCENT)
+				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), item_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, ACCENT)
 			else:
-				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), menu._menu_items[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(TEXT, 0.5))
+				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), item_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(TEXT, 0.5))
 
 		# ═══════════ BOTTOM INFO ═══════════
 		var bottom_y := s.y - 80
 		draw_rect(Rect2(0, bottom_y, s.x, 80), Color(BG, 0.9))
 		draw_rect(Rect2(0, bottom_y, s.x, 1), Color(ACCENT, 0.3))
 
-		draw_string(font, Vector2(20, bottom_y + 30), "↑↓ Navigate  |  ENTER Select  |  ESC Quit", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.4))
-		draw_string(font, Vector2(20, bottom_y + 55), "For WISPA, WISPMX & ABRINT Communities", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.4))
+		var nav_text: String = "↑↓ %s  |  ENTER %s  |  ESC %s  |  F10 %s" % [
+			LocaleManager.t("MENU_NAV") if LocaleManager else "Navigate",
+			LocaleManager.t("MENU_SELECT") if LocaleManager else "Select",
+			LocaleManager.t("MENU_QUIT") if LocaleManager else "Quit",
+			LocaleManager.t("SETTINGS_LANGUAGE") if LocaleManager else "Language"]
+		draw_string(font, Vector2(20, bottom_y + 30), nav_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.4))
+		var community_text: String = LocaleManager.t("MENU_COMMUNITY") if LocaleManager else "For WISPA, WISPMX & ABRINT Communities"
+		draw_string(font, Vector2(20, bottom_y + 55), community_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.4))
+		var lang_name: String = LocaleManager.get_language_name() if LocaleManager else "English"
 		draw_string(font, Vector2(s.x - 250, bottom_y + 30), "Rigel Open Labs", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(TEXT, 0.3))
-		draw_string(font, Vector2(s.x - 250, bottom_y + 55), "#SignalSmash v0.1", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.3))
+		draw_string(font, Vector2(s.x - 250, bottom_y + 55), "[%s] #SignalSmash v0.1" % lang_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.3))
 
 		# ═══════════ DECORATIVE ═══════════
 		# Scanning line effect
