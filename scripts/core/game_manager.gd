@@ -47,6 +47,10 @@ var p2_equipment: Dictionary = { "radio": null, "antenna": null, "router": null 
 # Selected arena
 var selected_arena: int = 0
 
+# Weather variant: 0=Normal, 1=Night, 2=Storm
+var selected_weather: int = 0
+const WEATHER_NAMES := ["Normal", "Night", "Storm"]
+
 const ARENA_DATA := [
 	{
 		"name": "Azotea Monterrey",

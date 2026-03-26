@@ -1,0 +1,43 @@
+{
+  "vendor": "Telrad",
+  "color": "#0072BC",
+  "description": "LTE reliability, stability",
+  "equipment": [
+    {
+      "id": "telrad_radio_01",
+      "type": "radio",
+      "model_name": "BreezeCOMPACT",
+      "stat_range": 10,
+      "stat_speed": 5,
+      "stat_stability": 15,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "stable_link",
+      "description": "Compact LTE base station"
+    },
+    {
+      "id": "telrad_antenna_01",
+      "type": "antenna",
+      "model_name": "CPE 8000",
+      "stat_range": 5,
+      "stat_speed": 5,
+      "stat_stability": 5,
+      "stat_power": 10,
+      "rarity": "common",
+      "special_passive": "beam_focus",
+      "description": "High-power LTE CPE with integrated antenna"
+    },
+    {
+      "id": "telrad_router_01",
+      "type": "router",
+      "model_name": "Aradial",
+      "stat_range": 0,
+      "stat_speed": 10,
+      "stat_stability": 15,
+      "stat_power": 0,
+      "rarity": "rare",
+      "special_passive": "edge_routing",
+      "description": "AAA and billing router platform"
+    }
+  ]
+}

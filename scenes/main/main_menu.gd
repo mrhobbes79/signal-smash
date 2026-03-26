@@ -10,10 +10,11 @@ const TEXT := Color("#E2E8F0")
 const P1_COLOR := Color("#2563EB")
 
 var _selected_index: int = 0
-var _menu_keys: Array[String] = ["MENU_TOURNAMENT", "MENU_CONFERENCE", "MENU_MINIGAME", "MENU_ART_TEST"]
+var _menu_keys: Array[String] = ["MENU_TOURNAMENT", "MENU_CONFERENCE", "MENU_ACADEMY", "MENU_MINIGAME", "MENU_ART_TEST"]
 var _scene_paths: Array[String] = [
 	"res://scenes/main/character_select.tscn",
 	"res://scenes/main/conference_mode.tscn",
+	"res://scenes/main/training_academy.tscn",
 	"res://scenes/minigames/minigame_test.tscn",
 	"res://scenes/art_test/art_style_test.tscn",
 ]

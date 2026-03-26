@@ -33,6 +33,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var count: int = GameMgr.ARENA_DATA.size()
 	var cols: int = 4
+	var weather_count: int = GameMgr.WEATHER_NAMES.size()
 
 	match event.keycode:
 		KEY_LEFT, KEY_A:
@@ -43,12 +44,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_selected = (_selected + 1) % count
 			if AudioManager:
 				AudioManager.play_sfx("menu_move")
-		KEY_UP, KEY_W:
+		KEY_UP:
 			_selected = (_selected - cols + count) % count
 			if AudioManager:
 				AudioManager.play_sfx("menu_move")
-		KEY_DOWN, KEY_S:
+		KEY_DOWN:
 			_selected = (_selected + cols) % count
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+		KEY_W:
+			GameMgr.selected_weather = (GameMgr.selected_weather - 1 + weather_count) % weather_count
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+		KEY_S:
+			GameMgr.selected_weather = (GameMgr.selected_weather + 1) % weather_count
 			if AudioManager:
 				AudioManager.play_sfx("menu_move")
 		KEY_ENTER, KEY_SPACE:
@@ -135,8 +144,16 @@ class _ArenaDraw extends Control:
 		var bottom_y := s.y - 65
 		draw_rect(Rect2(0, bottom_y, s.x, 65), BG)
 		draw_rect(Rect2(0, bottom_y, s.x, 1), Color(ACCENT, 0.3))
-		draw_string(font, Vector2(20, bottom_y + 25), "WASD / Arrows = Navigate | ENTER = Confirm | R = Random | ESC = Back", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.4))
+		draw_string(font, Vector2(20, bottom_y + 25), "Arrows/AD = Navigate | W/S = Weather | ENTER = Confirm | R = Random | ESC = Back", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.4))
 
 		# Selected arena info
 		var sel_arena: Dictionary = arenas[screen._selected]
+		var weather_name: String = GameMgr.WEATHER_NAMES[GameMgr.selected_weather]
 		draw_string(font, Vector2(20, bottom_y + 50), "Hazard: %s" % sel_arena["hazard"].replace("_", " ").capitalize(), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WARN)
+		# Weather indicator
+		var weather_col: Color = ACCENT
+		if GameMgr.selected_weather == 1:
+			weather_col = Color("#6366F1")  # Night = indigo
+		elif GameMgr.selected_weather == 2:
+			weather_col = Color("#EF4444")  # Storm = red
+		draw_string(font, Vector2(s.x - 300, bottom_y + 50), "Weather: %s" % weather_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, weather_col)

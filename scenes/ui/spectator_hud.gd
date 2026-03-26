@@ -32,6 +32,11 @@ var _hype_text: String = ""
 var _hype_timer: float = 0.0
 var _hype_scale: float = 1.0
 
+## Announcer system — procedural voice-like tones + text overlays
+var _announcer_text: String = ""
+var _announcer_timer: float = 0.0
+var _announcer_color: Color = Color("#06B6D4")
+
 ## Latency graph data
 var _latency_history_p1: Array[float] = []
 var _latency_history_p2: Array[float] = []
@@ -54,6 +59,7 @@ func _process(delta: float) -> void:
 	_uptime += delta
 	_commentary_timer -= delta
 	_hype_timer -= delta
+	_announcer_timer -= delta
 
 	_update_latency_graph(delta)
 	_check_commentary_triggers()
@@ -83,11 +89,21 @@ func _check_commentary_triggers() -> void:
 	var p1_sig := _get_signal(fighter1)
 	var p2_sig := _get_signal(fighter2)
 
-	# Big hit commentary
+	# Big hit commentary + announcer hype
 	if p1_sig < _last_p1_signal - 10.0:
 		_add_commentary(_get_hit_commentary("RICO", _last_p1_signal - p1_sig))
+		var dmg1: float = _last_p1_signal - p1_sig
+		if dmg1 >= 20.0:
+			_trigger_announcer(_get_announcer_hype_line(), Color("#F59E0B"))
+			if AudioManager:
+				AudioManager.play_sfx("announce_hype")
 	if p2_sig < _last_p2_signal - 10.0:
 		_add_commentary(_get_hit_commentary("VERO", _last_p2_signal - p2_sig))
+		var dmg2: float = _last_p2_signal - p2_sig
+		if dmg2 >= 20.0:
+			_trigger_announcer(_get_announcer_hype_line(), Color("#F59E0B"))
+			if AudioManager:
+				AudioManager.play_sfx("announce_hype")
 
 	# Low signal warning
 	if p1_sig <= 25.0 and _last_p1_signal > 25.0:
@@ -97,13 +113,19 @@ func _check_commentary_triggers() -> void:
 		_add_commentary("⚠ VERO's signal CRITICAL — interference overload!")
 		_trigger_hype("SIGNAL CRITICAL!")
 
-	# KO commentary
+	# KO commentary + announcer KO
 	if p1_sig <= 0.0 and _last_p1_signal > 0.0:
 		_add_commentary("🔴 RICO LINK DOWN! Complete signal loss! VERO takes the round!")
 		_trigger_hype("LINK DOWN!")
+		_trigger_announcer(_get_announcer_ko_line("RICO"), Color("#EF4444"))
+		if AudioManager:
+			AudioManager.play_sfx("announce_ko")
 	if p2_sig <= 0.0 and _last_p2_signal > 0.0:
 		_add_commentary("🔴 VERO LINK DOWN! Total disconnection! RICO dominates!")
 		_trigger_hype("LINK DOWN!")
+		_trigger_announcer(_get_announcer_ko_line("VERO"), Color("#EF4444"))
+		if AudioManager:
+			AudioManager.play_sfx("announce_ko")
 
 	_last_p1_signal = p1_sig
 	_last_p2_signal = p2_sig
@@ -130,6 +152,48 @@ func _trigger_hype(text: String) -> void:
 	_hype_text = text
 	_hype_timer = 2.0
 	_hype_scale = 2.0
+
+## ═══════════ ANNOUNCER SYSTEM ═══════════
+
+func _trigger_announcer(text: String, color: Color = Color("#06B6D4")) -> void:
+	_announcer_text = text
+	_announcer_timer = 2.5
+	_announcer_color = color
+
+func trigger_announcer_combo() -> void:
+	## Called externally when FULL SIGNAL COMBO fires
+	_trigger_announcer(_get_announcer_combo_line(), Color("#FCD34D"))
+	if AudioManager:
+		AudioManager.play_sfx("announce_combo")
+
+func _get_announcer_hype_line() -> String:
+	var lines: Array[String] = [
+		"MASSIVE SIGNAL DROP!",
+		"CRITICAL INTERFERENCE!",
+		"HUGE DEMODULATION HIT!",
+		"BANDWIDTH CRUSHED!",
+		"PACKET STORM!",
+		"SIGNAL DECIMATED!",
+	]
+	return lines[randi() % lines.size()]
+
+func _get_announcer_ko_line(name: String) -> String:
+	var lines: Array[String] = [
+		"%s IS DOWN! LINK TERMINATED!" % name,
+		"TOTAL SIGNAL LOSS FOR %s!" % name,
+		"%s DISCONNECTED! IT'S OVER!" % name,
+		"FLATLINE! %s HAS ZERO BARS!" % name,
+	]
+	return lines[randi() % lines.size()]
+
+func _get_announcer_combo_line() -> String:
+	var lines: Array[String] = [
+		"FULL SIGNAL COMBO! UNBELIEVABLE!",
+		"MAXIMUM THROUGHPUT ACHIEVED!",
+		"FIVE NINES! FULL SIGNAL DEVASTATION!",
+		"99.999% UPTIME COMBO! INCREDIBLE!",
+	]
+	return lines[randi() % lines.size()]
 
 func _get_signal(fighter: CharacterBody3D) -> float:
 	if fighter and fighter.has_method("get") and "signal_percent" in fighter:
@@ -237,6 +301,16 @@ class _SpectatorDraw extends Control:
 				hype_color = Color(WARN, hype_alpha)
 			var hype_x: float = s.x / 2.0 - float(hype_size) * 2.0
 			draw_string(font, Vector2(hype_x, s.y / 2.0), hud._hype_text, HORIZONTAL_ALIGNMENT_LEFT, -1, hype_size, hype_color)
+
+		# ═══════════ ANNOUNCER OVERLAY ═══════════
+		if hud._announcer_timer > 0.0 and hud._announcer_text != "":
+			var ann_alpha: float = clampf(hud._announcer_timer / 2.5, 0.0, 1.0)
+			var ann_y: float = s.y * 0.3
+			# Background bar
+			draw_rect(Rect2(s.x * 0.15, ann_y - 5, s.x * 0.7, 40), Color(BG, 0.85 * ann_alpha))
+			draw_rect(Rect2(s.x * 0.15, ann_y - 5, s.x * 0.7, 40), Color(hud._announcer_color, 0.6 * ann_alpha), false, 2.0)
+			# Announcer text centered
+			draw_string(font, Vector2(s.x * 0.5 - 200, ann_y + 25), hud._announcer_text, HORIZONTAL_ALIGNMENT_CENTER, 400, 24, Color(hud._announcer_color, ann_alpha))
 
 	func _draw_player_panel(pos: Vector2, name: String, player_tag: String, signal_pct: float, damage: float, state: String, color: Color, width: float) -> void:
 		var font := ThemeDB.fallback_font

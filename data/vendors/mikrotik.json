@@ -1,0 +1,43 @@
+{
+  "vendor": "Mikrotik",
+  "color": "#FF6600",
+  "description": "Known for deep configurability",
+  "equipment": [
+    {
+      "id": "mikrotik_radio_01",
+      "type": "radio",
+      "model_name": "hAP ac³",
+      "stat_range": 5,
+      "stat_speed": 5,
+      "stat_stability": 10,
+      "stat_power": 5,
+      "rarity": "common",
+      "special_passive": "stable_link",
+      "description": "Triple-chain dual-band AP"
+    },
+    {
+      "id": "mikrotik_antenna_01",
+      "type": "antenna",
+      "model_name": "mANT 30",
+      "stat_range": 20,
+      "stat_speed": -5,
+      "stat_stability": 10,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "long_range_beam",
+      "description": "30dBi parabolic dish antenna"
+    },
+    {
+      "id": "mikrotik_router_01",
+      "type": "router",
+      "model_name": "CCR2004",
+      "stat_range": 0,
+      "stat_speed": 15,
+      "stat_stability": 10,
+      "stat_power": 0,
+      "rarity": "rare",
+      "special_passive": "fast_routing",
+      "description": "Cloud Core Router with 10G ports"
+    }
+  ]
+}

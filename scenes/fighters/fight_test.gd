@@ -46,6 +46,15 @@ var _round_over: bool = false
 var _round_over_timer: float = 0.0
 var _match_over: bool = false
 
+# Weather system
+var _weather: int = 0  # 0=normal, 1=night, 2=storm
+var _storm_rain: GPUParticles3D = null
+var _storm_flash_timer: float = 0.0
+var _storm_flash_active: bool = false
+var _storm_flash_duration: float = 0.0
+var _storm_wind_dir: float = 1.0
+var _world_env: WorldEnvironment = null
+
 func _ready() -> void:
 	_build_arena()
 	_build_fighters()
@@ -663,23 +672,129 @@ func _build_camera() -> void:
 	add_child(_camera)
 
 func _build_lighting() -> void:
+	_weather = GameMgr.selected_weather
+
 	# World environment
-	var world_env := WorldEnvironment.new()
+	_world_env = WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("#FDE68A")
-	env.ambient_light_color = Color("#EA580C")
-	env.ambient_light_energy = 0.4
-	world_env.environment = env
-	add_child(world_env)
 
-	# Sun
+	match _weather:
+		0:  # Normal
+			env.background_color = Color("#FDE68A")
+			env.ambient_light_color = Color("#EA580C")
+			env.ambient_light_energy = 0.4
+		1:  # Night — darker ambient, blue tint
+			env.background_color = Color("#0F172A")
+			env.ambient_light_color = Color("#1E3A8A")
+			env.ambient_light_energy = 0.15
+		2:  # Storm — dark grey sky, desaturated
+			env.background_color = Color("#374151")
+			env.ambient_light_color = Color("#6B7280")
+			env.ambient_light_energy = 0.25
+
+	_world_env.environment = env
+	add_child(_world_env)
+
+	# Sun / moon / storm light
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-35, -45, 0)
-	sun.light_color = Color("#FCD34D")
-	sun.light_energy = 1.3
 	sun.shadow_enabled = true
+
+	match _weather:
+		0:  # Normal
+			sun.rotation_degrees = Vector3(-35, -45, 0)
+			sun.light_color = Color("#FCD34D")
+			sun.light_energy = 1.3
+		1:  # Night — moonlight, dimmer, blue-white
+			sun.rotation_degrees = Vector3(-50, -30, 0)
+			sun.light_color = Color("#93C5FD")
+			sun.light_energy = 0.5
+		2:  # Storm — grey overcast light
+			sun.rotation_degrees = Vector3(-40, -45, 0)
+			sun.light_color = Color("#9CA3AF")
+			sun.light_energy = 0.6
+
 	add_child(sun)
+
+	# Night: spotlight on fighter area
+	if _weather == 1:
+		var spot := SpotLight3D.new()
+		spot.position = Vector3(0, 12, 3)
+		spot.rotation_degrees = Vector3(-70, 0, 0)
+		spot.light_color = Color("#DBEAFE")
+		spot.light_energy = 2.5
+		spot.spot_range = 25.0
+		spot.spot_angle = 40.0
+		spot.shadow_enabled = true
+		add_child(spot)
+
+	# Storm: rain particle overlay + initialize timers
+	if _weather == 2:
+		_build_storm_rain()
+		_storm_flash_timer = randf_range(3.0, 7.0)
+
+func _build_storm_rain() -> void:
+	## Simple rain using GPUParticles3D with a basic ParticleProcessMaterial
+	_storm_rain = GPUParticles3D.new()
+	_storm_rain.amount = 300
+	_storm_rain.lifetime = 1.2
+	_storm_rain.position = Vector3(0, 15, 0)
+	_storm_rain.visibility_aabb = AABB(Vector3(-20, -20, -10), Vector3(40, 40, 20))
+
+	var mat := ParticleProcessMaterial.new()
+	mat.direction = Vector3(0.2, -1, 0)  # Slight wind angle
+	mat.spread = 5.0
+	mat.initial_velocity_min = 18.0
+	mat.initial_velocity_max = 25.0
+	mat.gravity = Vector3(0, -15, 0)
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	mat.emission_box_extents = Vector3(15, 0.5, 8)
+	mat.scale_min = 0.02
+	mat.scale_max = 0.04
+	_storm_rain.process_material = mat
+
+	# Simple white mesh for rain drops (tiny stretched box)
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.02, 0.5, 0.02)
+	var mesh_mat := StandardMaterial3D.new()
+	mesh_mat.albedo_color = Color(0.7, 0.8, 1.0, 0.6)
+	mesh_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mesh_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material = mesh_mat
+	_storm_rain.draw_pass_1 = mesh
+	add_child(_storm_rain)
+
+func _update_weather(delta: float) -> void:
+	if _weather != 2:
+		return
+
+	# Lightning flash system
+	_storm_flash_timer -= delta
+	if _storm_flash_timer <= 0.0 and not _storm_flash_active:
+		_storm_flash_active = true
+		_storm_flash_duration = randf_range(0.1, 0.25)
+		# Brighten the scene temporarily
+		if _world_env and _world_env.environment:
+			_world_env.environment.ambient_light_energy = 1.5
+			_world_env.environment.background_color = Color("#D1D5DB")
+
+	if _storm_flash_active:
+		_storm_flash_duration -= delta
+		if _storm_flash_duration <= 0.0:
+			_storm_flash_active = false
+			_storm_flash_timer = randf_range(4.0, 10.0)
+			# Restore dark storm lighting
+			if _world_env and _world_env.environment:
+				_world_env.environment.ambient_light_energy = 0.25
+				_world_env.environment.background_color = Color("#374151")
+
+	# Wind push on fighters — subtle lateral force
+	_storm_wind_dir = sign(sin(Time.get_ticks_msec() / 1000.0 * 0.3))
+	var wind_force: float = 0.8 * _storm_wind_dir
+	if _fighter1 and not _fighter1.is_on_floor():
+		_fighter1.velocity.x += wind_force * delta
+	if _fighter2 and not _fighter2.is_on_floor():
+		_fighter2.velocity.x += wind_force * delta
 
 func _build_spectator_hud() -> void:
 	_spectator_hud = CanvasLayer.new()
@@ -725,6 +840,7 @@ func _process(delta: float) -> void:
 	_update_camera()
 	_check_fight_end(delta)
 	_update_combo_meters()
+	_update_weather(delta)
 
 func _update_combo_meters() -> void:
 	# Check combo timer decay for active combos in fighter_base

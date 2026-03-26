@@ -67,6 +67,9 @@ func _generate_sfx_cache() -> void:
 	_sfx_cache["round_end"] = _gen_round_end()
 	_sfx_cache["combo_ready"] = _gen_combo_ready()
 	_sfx_cache["install_complete"] = _gen_victory()
+	_sfx_cache["announce_hype"] = _gen_announcer_hype()
+	_sfx_cache["announce_ko"] = _gen_announcer_ko()
+	_sfx_cache["announce_combo"] = _gen_announcer_combo()
 
 ## Play a cached SFX
 func play_sfx(sfx_name: String, volume_db: float = 0.0) -> void:
@@ -573,6 +576,80 @@ func _gen_combo_ready() -> AudioStreamWAV:
 			mix += randf_range(-1, 1) * exp(-dt * 15.0) * 0.3
 			# Sub bass
 			mix += sin(dt * 30.0 * TAU) * exp(-dt * 5.0) * 0.4
+		samples[i] = int(clampf(mix, -1, 1) * 30000.0)
+	return _samples_to_wav(samples)
+
+## ═══════════ ANNOUNCER VOICE PACKS ═══════════
+
+func _gen_announcer_hype() -> AudioStreamWAV:
+	## Rising excitement tone for big hits — ascending beeps with increasing intensity
+	var duration: float = 0.5
+	var samples := _make_samples(duration)
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var progress: float = t / duration
+		# Three ascending tones
+		var tone_idx: int = mini(int(t / 0.15), 2)
+		var freqs: Array[float] = [600.0, 900.0, 1300.0]
+		var freq: float = freqs[tone_idx]
+		var in_tone: bool = fmod(t, 0.15) < 0.12
+		var envelope: float = (1.0 if in_tone else 0.0) * (0.5 + progress * 0.5)
+		# Main tone + harmonic
+		var mix: float = sin(t * freq * TAU) * 0.4 + sin(t * freq * 1.5 * TAU) * 0.15
+		# Add rising noise excitement
+		mix += randf_range(-1.0, 1.0) * 0.05 * progress
+		samples[i] = int(clampf(mix * envelope, -1, 1) * 30000.0)
+	return _samples_to_wav(samples)
+
+func _gen_announcer_ko() -> AudioStreamWAV:
+	## Dramatic descending tone for KOs — deep impact then falling sweep
+	var duration: float = 0.8
+	var samples := _make_samples(duration)
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var mix: float = 0.0
+		if t < 0.15:
+			# Impact burst
+			var impact_env: float = exp(-t * 20.0)
+			mix += sin(t * 150.0 * TAU) * 0.5 * impact_env
+			mix += randf_range(-1.0, 1.0) * 0.3 * impact_env
+		# Descending sweep
+		var sweep_freq: float = lerpf(800.0, 80.0, clampf(t / 0.7, 0.0, 1.0))
+		var sweep_env: float = exp(-t * 3.0)
+		mix += sin(t * sweep_freq * TAU) * 0.35 * sweep_env
+		# Sub bass rumble
+		mix += sin(t * 50.0 * TAU) * 0.2 * sweep_env
+		# Square wave alarm feel
+		mix += sign(sin(t * 4.0 * TAU)) * 0.1 * sweep_env
+		samples[i] = int(clampf(mix, -1, 1) * 30000.0)
+	return _samples_to_wav(samples)
+
+func _gen_announcer_combo() -> AudioStreamWAV:
+	## Epic fanfare for FULL SIGNAL COMBO — ascending arpeggio + shimmer
+	var duration: float = 1.0
+	var samples := _make_samples(duration)
+	var notes: Array[float] = [523.0, 659.0, 784.0, 1047.0, 1319.0]  # C5 E5 G5 C6 E6
+	for i in range(samples.size()):
+		var t: float = float(i) / SAMPLE_RATE
+		var mix: float = 0.0
+		if t < 0.6:
+			# Ascending arpeggio
+			var note_idx: int = mini(int(t / 0.12), notes.size() - 1)
+			var freq: float = notes[note_idx]
+			var note_t: float = fmod(t, 0.12)
+			var env: float = 1.0 - note_t / 0.12 * 0.2
+			mix += sin(t * freq * TAU) * 0.35 * env
+			mix += sin(t * freq * 2.0 * TAU) * 0.15 * env  # Octave harmonic
+			mix += sin(t * freq * 3.0 * TAU) * 0.05 * env  # Shimmer
+		else:
+			# Sustained chord (C major triad high)
+			var dt: float = t - 0.6
+			var chord_env: float = 1.0 - dt / 0.4
+			mix += sin(t * 1047.0 * TAU) * 0.25 * chord_env
+			mix += sin(t * 1319.0 * TAU) * 0.2 * chord_env
+			mix += sin(t * 1568.0 * TAU) * 0.15 * chord_env
+			# Shimmer vibrato
+			mix += sin(t * 1047.0 * TAU + sin(t * 6.0 * TAU) * 0.5) * 0.1 * chord_env
 		samples[i] = int(clampf(mix, -1, 1) * 30000.0)
 	return _samples_to_wav(samples)
 

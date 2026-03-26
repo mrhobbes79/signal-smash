@@ -1,0 +1,31 @@
+{
+  "vendor": "Mimosa",
+  "color": "#00A651",
+  "description": "GPS sync, clean signal",
+  "equipment": [
+    {
+      "id": "mimosa_radio_01",
+      "type": "radio",
+      "model_name": "A5x",
+      "stat_range": 10,
+      "stat_speed": 10,
+      "stat_stability": 5,
+      "stat_power": 0,
+      "rarity": "common",
+      "special_passive": "gps_sync",
+      "description": "Multi-user MIMO access point with GPS sync"
+    },
+    {
+      "id": "mimosa_antenna_01",
+      "type": "antenna",
+      "model_name": "N5-360",
+      "stat_range": 15,
+      "stat_speed": 5,
+      "stat_stability": 5,
+      "stat_power": 5,
+      "rarity": "common",
+      "special_passive": "massive_mimo",
+      "description": "360-degree beamforming antenna"
+    }
+  ]
+}
