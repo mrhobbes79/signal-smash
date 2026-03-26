@@ -29,6 +29,26 @@ var is_grounded: bool = false
 var is_invincible: bool = false
 var hitstun_timer: float = 0.0
 
+## Equipment modifiers (applied from loadout)
+var equip_speed_mod: float = 0.0     ## Adds to MOVE_SPEED
+var equip_power_mod: float = 0.0     ## Multiplier on attack damage (0.0 = no bonus)
+var equip_defense_mod: float = 0.0   ## Reduces incoming damage
+var equip_range_mod: float = 0.0     ## Scales hitbox size
+var equip_specials: Array[String] = []  ## Active special passives from equipment
+
+## Special ability state
+var special_cooldown: float = 0.0
+var special_active_timer: float = 0.0
+var special_shield_active: bool = false
+
+## FULL SIGNAL COMBO meter (0.0 to 100.0)
+var combo_meter: float = 0.0
+var combo_active: bool = false
+var combo_timer: float = 0.0
+const COMBO_HIT_CHARGE: float = 12.0   ## Meter gained per hit landed
+const COMBO_TAKE_CHARGE: float = 5.0   ## Meter gained when taking damage
+const COMBO_MAX: float = 100.0
+
 ## Input
 var input_direction: Vector3 = Vector3.ZERO
 var use_manual_input: bool = false  ## If true, skip read_input() — input set externally
@@ -60,11 +80,26 @@ func _physics_process(delta: float) -> void:
 	if hitstun_timer > 0.0:
 		hitstun_timer -= delta
 
+	# Special cooldown
+	if special_cooldown > 0.0:
+		special_cooldown -= delta
+
+	# Special active timer
+	if special_active_timer > 0.0:
+		special_active_timer -= delta
+		if special_active_timer <= 0.0:
+			_deactivate_special()
+
 	move_and_slide()
 
 	# Check ring-out (fell below arena)
-	if global_position.y < -10.0:
+	if global_position.y < -10.0 and signal_percent > 0.0:
 		trigger_ko()
+	# Clamp position so KO'd fighter doesn't fall forever
+	if signal_percent <= 0.0:
+		velocity = Vector3.ZERO
+		if global_position.y < -10.0:
+			global_position.y = -10.0
 
 ## Read movement input for this player's device
 func read_input() -> void:
@@ -102,21 +137,52 @@ func is_device_button_pressed(button: int) -> bool:
 		return Input.is_joy_button_pressed(device_id, button)
 	return false
 
+## Get effective move speed (base + equipment)
+func get_move_speed() -> float:
+	return MOVE_SPEED + equip_speed_mod
+
+## Get effective attack damage multiplier
+func get_damage_multiplier() -> float:
+	return 1.0 + equip_power_mod
+
+## Get effective defense reduction (0.0 to ~0.5)
+func get_defense_reduction() -> float:
+	return clampf(equip_defense_mod, 0.0, 0.5)
+
+## Get effective hitbox scale
+func get_hitbox_scale() -> float:
+	return 1.0 + equip_range_mod
+
 ## Apply knockback force from a hit
 func apply_knockback(direction: Vector3, base_force: float) -> void:
 	var knockback_multiplier: float = 1.0 + (damage_accumulated * KNOCKBACK_GROWTH)
-	var force: float = base_force * knockback_multiplier * KNOCKBACK_BASE
+	# Defense reduces knockback
+	var defense_factor: float = 1.0 - get_defense_reduction()
+	var force: float = base_force * knockback_multiplier * KNOCKBACK_BASE * defense_factor
 	velocity = direction.normalized() * force
-	velocity.y = max(velocity.y, force * 0.5)  # Always some upward knockback
-	hitstun_timer = HITSTUN_BASE * knockback_multiplier
+	velocity.y = max(velocity.y, force * 0.5)
+	hitstun_timer = HITSTUN_BASE * knockback_multiplier * defense_factor
 
 ## Take damage — increases damage_accumulated (Smash-style) and reduces signal
 func take_damage(amount: float, attacker_position: Vector3, knockback_force: float) -> void:
 	if is_invincible:
 		return
 
-	damage_accumulated += amount
+	# Shield blocks one hit completely
+	if special_shield_active:
+		special_shield_active = false
+		if AudioManager:
+			AudioManager.play_sfx("signal_lock")
+		print("[FIGHT] P%d SHIELD blocked the hit!" % player_id)
+		return
+
+	# Defense reduces incoming damage
+	var actual_damage: float = amount * (1.0 - get_defense_reduction())
+	damage_accumulated += actual_damage
 	signal_percent = max(0.0, 100.0 - damage_accumulated)
+
+	# Charge combo meter when taking damage (revenge mechanic)
+	combo_meter = minf(combo_meter + COMBO_TAKE_CHARGE, COMBO_MAX)
 
 	# Calculate knockback direction (away from attacker)
 	var knock_dir: Vector3 = (global_position - attacker_position).normalized()
@@ -149,5 +215,153 @@ func reset_fighter() -> void:
 	hitstun_timer = 0.0
 	is_invincible = false
 	can_double_jump = true
+	special_cooldown = 0.0
+	special_active_timer = 0.0
+	special_shield_active = false
+	combo_meter = 0.0
+	combo_active = false
+	combo_timer = 0.0
 	if state_machine and state_machine.states.has("idle"):
 		state_machine._on_state_transition("idle")
+
+## ═══════════ FULL SIGNAL COMBO ═══════════
+
+func can_activate_combo() -> bool:
+	return combo_meter >= COMBO_MAX and not combo_active and signal_percent > 0.0
+
+func activate_combo() -> void:
+	if not can_activate_combo():
+		return
+	combo_active = true
+	combo_meter = 0.0
+	combo_timer = 3.0  # 3 second combo sequence
+	is_invincible = true
+	print("[FIGHT] P%d FULL SIGNAL COMBO ACTIVATED!" % player_id)
+
+## ═══════════ EQUIPMENT SPECIAL ABILITIES ═══════════
+
+## Activate Q special — uses equipment special, or character default if none equipped
+func activate_special() -> void:
+	if special_cooldown > 0.0:
+		return
+
+	var sp: String
+	if not equip_specials.is_empty():
+		sp = equip_specials[0]  # Primary special from first equipped item
+	else:
+		# Default character specials (no equipment needed)
+		sp = _get_default_special()
+
+	if sp.is_empty():
+		return
+
+	special_cooldown = 5.0  # 5s cooldown for all specials
+
+	match sp:
+		"long_range_beam":
+			# Extended range attack — temporarily doubles hitbox scale
+			equip_range_mod += 0.8
+			special_active_timer = 3.0
+			print("[FIGHT] P%d SPECIAL: Long Range Beam! +80%% range for 3s" % player_id)
+		"massive_mimo":
+			# AoE burst — damage all nearby enemies instantly
+			_aoe_burst(12.0, 5.0)
+			print("[FIGHT] P%d SPECIAL: Massive MIMO AoE burst!" % player_id)
+		"stable_link":
+			# Shield — blocks next incoming hit completely
+			special_shield_active = true
+			special_active_timer = 4.0
+			print("[FIGHT] P%d SPECIAL: Stable Link shield active for 4s!" % player_id)
+		"gps_sync":
+			# Speed boost
+			equip_speed_mod += 4.0
+			special_active_timer = 3.0
+			print("[FIGHT] P%d SPECIAL: GPS Sync speed boost for 3s!" % player_id)
+		"beam_focus":
+			# Power boost — extra damage
+			equip_power_mod += 0.5
+			special_active_timer = 3.0
+			print("[FIGHT] P%d SPECIAL: Beam Focus! +50%% power for 3s!" % player_id)
+		"edge_routing":
+			# Heal — recover some signal
+			var heal: float = minf(20.0, 100.0 - signal_percent)
+			damage_accumulated = maxf(0.0, damage_accumulated - heal)
+			signal_percent = minf(100.0, signal_percent + heal)
+			print("[FIGHT] P%d SPECIAL: Edge Routing! Healed %.0f%% signal" % [player_id, heal])
+		"quick_link":
+			# Dash forward — quick teleport lunge
+			var dash_dir: float = 1.0 if facing_right else -1.0
+			velocity.x = dash_dir * 25.0
+			equip_speed_mod += 3.0
+			special_active_timer = 2.0
+			print("[FIGHT] P%d SPECIAL: Quick Link dash!" % player_id)
+		"fast_routing":
+			# Attack speed burst — reduces attack cooldown (via speed boost + brief invincibility)
+			is_invincible = true
+			equip_speed_mod += 5.0
+			equip_power_mod += 0.3
+			special_active_timer = 2.5
+			print("[FIGHT] P%d SPECIAL: Fast Routing! Speed + invincible for 2.5s!" % player_id)
+		_:
+			# Generic boost for unknown specials
+			equip_power_mod += 0.3
+			special_active_timer = 3.0
+			print("[FIGHT] P%d SPECIAL: %s activated!" % [player_id, sp])
+
+	if AudioManager:
+		AudioManager.play_sfx("install_complete")
+
+## Deactivate timed special effects
+func _deactivate_special() -> void:
+	# Reset temporary modifiers to base equipment values
+	var base_mods := {"range": 0.0, "speed": 0.0, "power": 0.0}
+	# Recalculate from equipment
+	if player_id == 1:
+		var mods := GameMgr.get_equipment_modifiers(GameMgr.p1_equipment)
+		base_mods["range"] = mods["range"] / 100.0
+		base_mods["speed"] = mods["speed"] / 10.0
+		base_mods["power"] = mods["power"] / 50.0
+	elif player_id == 2:
+		var mods := GameMgr.get_equipment_modifiers(GameMgr.p2_equipment)
+		base_mods["range"] = mods["range"] / 100.0
+		base_mods["speed"] = mods["speed"] / 10.0
+		base_mods["power"] = mods["power"] / 50.0
+	equip_range_mod = base_mods["range"]
+	equip_speed_mod = base_mods["speed"]
+	equip_power_mod = base_mods["power"]
+	special_shield_active = false
+	is_invincible = false
+
+## AoE burst — damages all fighters in range
+func _aoe_burst(damage: float, radius: float) -> void:
+	for node in get_tree().get_nodes_in_group("fighters"):
+		if node != self and node is CharacterBody3D and node.has_method("take_damage"):
+			var dist: float = global_position.distance_to(node.global_position)
+			if dist < radius:
+				node.take_damage(damage, global_position, 5.0)
+	if AudioManager:
+		AudioManager.play_sfx("hit_heavy")
+
+## Default special per character (used when no equipment is equipped)
+func _get_default_special() -> String:
+	# Lookup character name from GameMgr
+	var char_data: Dictionary
+	if player_id == 1:
+		char_data = GameMgr.get_p1()
+	elif player_id == 2:
+		char_data = GameMgr.get_p2()
+	else:
+		return ""
+
+	var char_name: String = char_data.get("name", "")
+	match char_name:
+		"RICO":
+			return "long_range_beam"  # Cable Whip — fiber lasso reach
+		"ING. VERO":
+			return "beam_focus"  # Spectrum Scan — focused power
+		"DON AURELIO":
+			return "stable_link"  # Old School Fix — shield/block
+		"MORXEL":
+			return "quick_link"  # Signal Ghost — teleport dash
+		_:
+			return "beam_focus"

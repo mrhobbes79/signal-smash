@@ -6,6 +6,13 @@ extends Node3D
 const AntennaAlignScene = preload("res://scenes/minigames/antenna_align.tscn")
 const SpectrumSniperScene = preload("res://scenes/minigames/spectrum_sniper.tscn")
 const CableRunScene = preload("res://scenes/minigames/cable_run.tscn")
+const TowerClimbScene = preload("res://scenes/minigames/tower_climb.tscn")
+const PingPongScene = preload("res://scenes/minigames/ping_pong.tscn")
+const FirewallFrenzyScene = preload("res://scenes/minigames/firewall_frenzy.tscn")
+const IPPuzzleScene = preload("res://scenes/minigames/ip_puzzle.tscn")
+const WeatherDodgeScene = preload("res://scenes/minigames/weather_dodge.tscn")
+const BandwidthAuctionScene = preload("res://scenes/minigames/bandwidth_auction.tscn")
+const TroubleshooterScene = preload("res://scenes/minigames/troubleshooter.tscn")
 const MiniGameBaseScript = preload("res://scripts/minigames/minigame_base.gd")
 
 var _scenes: Array = []
@@ -16,7 +23,11 @@ var _status_label: Label
 var _waiting_to_start: bool = true
 
 func _ready() -> void:
-	_scenes = [AntennaAlignScene, SpectrumSniperScene, CableRunScene]
+	_scenes = [
+		AntennaAlignScene, SpectrumSniperScene, CableRunScene,
+		TowerClimbScene, PingPongScene, FirewallFrenzyScene, IPPuzzleScene,
+		WeatherDodgeScene, BandwidthAuctionScene, TroubleshooterScene,
+	]
 	_build_camera()
 	_build_hud()
 	_show_start_prompt()
@@ -44,20 +55,32 @@ func _build_hud() -> void:
 	canvas.add_child(_status_label)
 
 func _show_start_prompt() -> void:
-	var names: Array[String] = ["ANTENNA ALIGN-OFF", "SPECTRUM SNIPER", "CABLE RUN"]
+	var names: Array[String] = [
+		"ANTENNA ALIGN-OFF", "SPECTRUM SNIPER", "CABLE RUN",
+		"TOWER CLIMB RACE", "PING PONG", "FIREWALL FRENZY", "IP PUZZLE",
+		"WEATHER DODGE", "BANDWIDTH AUCTION", "THE TROUBLESHOOTER",
+	]
 	var descs: Array[String] = [
 		"Align your dish antenna to the target signal.",
 		"Find the cleanest channel in the spectrum.",
 		"Route a cable through the maze. Pick the right connector!",
+		"Race to climb the tower! Tap rhythmically, secure your harness.",
+		"Packet pong! Keep the data flowing past your opponent.",
+		"Block bad packets, allow good ones through your firewall.",
+		"Assemble the correct IP address and subnet mask.",
+		"Keep your signal link alive through rain, snow, and solar flares.",
+		"Bid on spectrum blocks. Build the best coverage plan.",
+		"Diagnose customer network problems from clues.",
 	]
+	var idx: int = clampi(_current_scene_idx, 0, names.size() - 1)
 	_status_label.text = """SIGNAL SMASH — Mini-Game Test
 
 %s
 %s
 
-TAB = Next mini-game | F1/F2/F3 = Select | ENTER = Start | R = Restart | ESC = Menu
+TAB = Next mini-game | ENTER = Start | R = Restart | ESC = Menu
 
-Current: [%d/%d] %s""" % [_current_scene_idx + 1, _scenes.size(), names[_current_scene_idx]]
+Current: [%d/%d] %s""" % [names[idx], descs[idx], idx + 1, _scenes.size(), names[idx]]
 
 func _start_minigame() -> void:
 	_waiting_to_start = false
@@ -107,18 +130,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_start_prompt()
 		elif event.keycode == KEY_ESCAPE:
 			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
-		# Switch mini-game with Tab (cycle) or F1/F2/F3
+		# Switch mini-game with Tab (cycle forward) or Shift+Tab (cycle back)
 		elif event.keycode == KEY_TAB and _waiting_to_start:
-			_current_scene_idx = (_current_scene_idx + 1) % _scenes.size()
+			if Input.is_key_pressed(KEY_SHIFT):
+				_current_scene_idx = (_current_scene_idx - 1 + _scenes.size()) % _scenes.size()
+			else:
+				_current_scene_idx = (_current_scene_idx + 1) % _scenes.size()
 			if AudioManager:
 				AudioManager.play_sfx("menu_move")
 			_show_start_prompt()
 		elif event.keycode == KEY_F1 and _waiting_to_start:
-			_current_scene_idx = 0
-			_show_start_prompt()
-		elif event.keycode == KEY_F2 and _waiting_to_start:
-			_current_scene_idx = 1
-			_show_start_prompt()
-		elif event.keycode == KEY_F3 and _waiting_to_start:
 			_current_scene_idx = 2
 			_show_start_prompt()

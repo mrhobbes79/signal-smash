@@ -24,7 +24,7 @@
       "stat_stability": 0,
       "stat_power": 5,
       "rarity": "common",
-      "special_passive": "",
+      "special_passive": "beam_focus",
       "description": "60 GHz point-to-point link"
     },
     {

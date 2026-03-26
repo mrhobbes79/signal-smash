@@ -24,6 +24,8 @@ config/icon="res://icon.svg"
 AudioManager="*res://scripts/core/audio_manager.gd"
 LocaleManager="*res://scripts/core/locale_manager.gd"
 InputManager="*res://scripts/core/input_manager.gd"
+GameMgr="*res://scripts/core/game_manager.gd"
+Progression="*res://scripts/core/progression_manager.gd"
 
 [display]
 

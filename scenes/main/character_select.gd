@@ -34,7 +34,7 @@ const CHARACTERS := [
 		"color": Color("#92400E"),
 		"accent": Color("#D97706"),
 		"stats": {"SPD": 3, "PWR": 9, "RNG": 5, "DEF": 9},
-		"locked": true,
+		"locked": false,
 		"catchphrase": "En mis tiempos...",
 	},
 	{
@@ -43,7 +43,7 @@ const CHARACTERS := [
 		"color": Color("#059669"),
 		"accent": Color("#10B981"),
 		"stats": {"SPD": 9, "PWR": 8, "RNG": 6, "DEF": 2},
-		"locked": true,
+		"locked": false,
 		"catchphrase": "root@signal:~# sudo smash",
 	},
 ]
@@ -54,6 +54,12 @@ var _p1_ready: bool = false
 var _p2_ready: bool = false
 var _time: float = 0.0
 var _draw_node: Control
+
+func _is_locked(index: int) -> bool:
+	var char_name: String = CHARACTERS[index]["name"]
+	if Progression:
+		return not Progression.is_character_unlocked(char_name)
+	return CHARACTERS[index]["locked"]
 
 func _ready() -> void:
 	var bg_rect := ColorRect.new()
@@ -84,13 +90,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_A:
 				_p1_index = (_p1_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
-				if CHARACTERS[_p1_index]["locked"]:
+				if _is_locked(_p1_index):
 					_p1_index = (_p1_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_D:
 				_p1_index = (_p1_index + 1) % CHARACTERS.size()
-				if CHARACTERS[_p1_index]["locked"]:
+				if _is_locked(_p1_index):
 					_p1_index = (_p1_index + 1) % CHARACTERS.size()
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
@@ -104,13 +110,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_LEFT:
 				_p2_index = (_p2_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
-				if CHARACTERS[_p2_index]["locked"]:
+				if _is_locked(_p2_index):
 					_p2_index = (_p2_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_RIGHT:
 				_p2_index = (_p2_index + 1) % CHARACTERS.size()
-				if CHARACTERS[_p2_index]["locked"]:
+				if _is_locked(_p2_index):
 					_p2_index = (_p2_index + 1) % CHARACTERS.size()
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
@@ -127,10 +133,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
 
-	# Both ready — go to loadout screen
+	# Both ready — store selections and go to loadout screen
 	if _p1_ready and _p2_ready:
 		if AudioManager:
 			AudioManager.play_sfx("menu_select")
+		GameMgr.p1_char_index = _p1_index
+		GameMgr.p2_char_index = _p2_index
 		get_tree().change_scene_to_file("res://scenes/main/loadout_screen.tscn")
 
 
@@ -158,7 +166,7 @@ class _SelectDraw extends Control:
 		for i in range(sel.CHARACTERS.size()):
 			var ch: Dictionary = sel.CHARACTERS[i]
 			var card_x: float = 15.0 + i * (card_w + 12)
-			var is_locked: bool = ch["locked"]
+			var is_locked: bool = not Progression.is_character_unlocked(ch["name"]) if Progression else ch["locked"]
 			var p1_sel: bool = i == sel._p1_index
 			var p2_sel: bool = i == sel._p2_index
 			var color: Color = LOCKED if is_locked else ch["color"]

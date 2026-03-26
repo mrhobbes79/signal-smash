@@ -24,7 +24,7 @@
       "stat_stability": 5,
       "stat_power": 5,
       "rarity": "common",
-      "special_passive": "",
+      "special_passive": "gps_sync",
       "description": "High-gain integrated antenna"
     },
     {

@@ -24,6 +24,9 @@ var _score_labels: Dictionary = {}  # { player_id: Label3D }
 var _title_label: Label3D
 var _instruction_label: Label3D
 
+## Mini-game music index (0=Vivaldi/Antenna, 1=Bach/Spectrum, 2=Mozart/Cable)
+@export var music_index: int = 0
+
 ## Called by the framework to start the mini-game
 func start(p_player_ids: Array) -> void:
 	player_ids = p_player_ids
@@ -34,6 +37,9 @@ func start(p_player_ids: Array) -> void:
 	is_running = true
 	is_finished = false
 	_build_common_ui()
+	# Play classical background music
+	if AudioManager:
+		AudioManager.play_music_minigame(music_index)
 	_on_start()
 
 ## Override in subclass — set up mini-game visuals and state
@@ -102,6 +108,10 @@ func _finish() -> void:
 	is_running = false
 	is_finished = true
 	time_remaining = 0.0
+
+	# Stop music
+	if AudioManager:
+		AudioManager.stop_music()
 
 	# Determine winner
 	var winner_id: int = -1

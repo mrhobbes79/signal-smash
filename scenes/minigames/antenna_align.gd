@@ -43,6 +43,7 @@ func _ready() -> void:
 	_base.duration_seconds = 30.0
 	_base.buff_stat = "range"
 	_base.buff_value = 15
+	_base.music_index = 0  # Vivaldi — fast strings
 	add_child(_base)
 
 	# Mini-game handles its own _process loop

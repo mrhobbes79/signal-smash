@@ -40,6 +40,7 @@ func _ready() -> void:
 	_base.duration_seconds = 30.0
 	_base.buff_stat = "stability"
 	_base.buff_value = 10
+	_base.music_index = 2  # Mozart — playful allegro
 	add_child(_base)
 
 func start(player_ids: Array) -> void:

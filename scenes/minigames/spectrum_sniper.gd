@@ -29,6 +29,7 @@ func _ready() -> void:
 	_base.duration_seconds = 45.0
 	_base.buff_stat = "power"
 	_base.buff_value = 20
+	_base.music_index = 1  # Bach — fugue, analytical
 	add_child(_base)
 
 func start(player_ids: Array) -> void:

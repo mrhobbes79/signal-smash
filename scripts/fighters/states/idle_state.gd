@@ -27,6 +27,8 @@ func physics_update(delta: float) -> void:
 			transitioned.emit("jump")
 		elif fighter.is_device_button_pressed(JOY_BUTTON_X):
 			transitioned.emit("attack")
+		elif fighter.is_device_button_pressed(JOY_BUTTON_Y):
+			fighter.activate_special()
 
 func handle_input(event: InputEvent) -> void:
 	if fighter and fighter.device_id >= 0:

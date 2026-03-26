@@ -7,9 +7,10 @@ func physics_update(delta: float) -> void:
 		return
 	fighter.read_input()
 
-	# Apply movement
-	fighter.velocity.x = fighter.input_direction.x * fighter.MOVE_SPEED
-	fighter.velocity.z = fighter.input_direction.z * fighter.MOVE_SPEED
+	# Apply movement (equipment speed modifier)
+	var spd: float = fighter.get_move_speed()
+	fighter.velocity.x = fighter.input_direction.x * spd
+	fighter.velocity.z = fighter.input_direction.z * spd
 
 	# Transition to idle if no input
 	if fighter.input_direction.length() < 0.1:
@@ -26,6 +27,8 @@ func physics_update(delta: float) -> void:
 			transitioned.emit("jump")
 		elif fighter.is_device_button_pressed(JOY_BUTTON_X):
 			transitioned.emit("attack")
+		elif fighter.is_device_button_pressed(JOY_BUTTON_Y):
+			fighter.activate_special()
 
 func handle_input(event: InputEvent) -> void:
 	if fighter and fighter.device_id >= 0:

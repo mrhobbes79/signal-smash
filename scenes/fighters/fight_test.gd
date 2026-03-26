@@ -34,6 +34,17 @@ var _camera: Camera3D
 var _hud_label: Label
 var _spectator_hud: CanvasLayer
 var _spectator_mode: bool = false
+var _fight_over: bool = false
+var _fight_over_timer: float = 0.0
+
+# Round system (best of 3)
+var _round: int = 1
+var _max_rounds: int = 3
+var _p1_round_wins: int = 0
+var _p2_round_wins: int = 0
+var _round_over: bool = false
+var _round_over_timer: float = 0.0
+var _match_over: bool = false
 
 func _ready() -> void:
 	_build_arena()
@@ -42,9 +53,10 @@ func _ready() -> void:
 	_build_hud()
 	_build_lighting()
 	_build_spectator_hud()
-	# Start fight music
+	# Start fight music based on arena
 	if AudioManager:
-		AudioManager.play_music_monterrey()
+		var arena_music: String = GameMgr.get_arena().get("music", "monterrey")
+		AudioManager.play_music_fight(arena_music)
 
 var _hazard_antenna: Node3D
 var _hazard_area: Area3D
@@ -53,61 +65,255 @@ const HAZARD_KNOCKBACK: float = 8.0
 const HAZARD_DAMAGE: float = 12.0
 
 func _build_arena() -> void:
-	# Main platform (with collision)
-	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#EA580C"))
+	var arena_id: int = GameMgr.selected_arena
+	match arena_id:
+		0: _build_arena_monterrey()
+		1: _build_arena_cdmx()
+		2: _build_arena_rio()
+		3: _build_arena_dallas()
+		4: _build_arena_bogota()
+		5: _build_arena_buenos_aires()
+		6: _build_arena_miami()
+		7: _build_arena_wispa()
+		_: _build_arena_monterrey()
 
-	# Platform edge (visual only)
-	var edge := ProceduralMesh.create_platform(16.2, 8.2, 0.1, Color("#9A3412"))
-	edge.position.y = -0.55
-	add_child(edge)
-
-	# Left elevated platform (with collision)
-	_add_solid_platform(Vector3(-5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
-
-	# Right elevated platform (with collision)
-	_add_solid_platform(Vector3(5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
-
-	# Ground visual (far below for depth, visual only)
-	var ground := ProceduralMesh.create_platform(60.0, 60.0, 0.1, Color("#451a03"))
+	# Ground visual (all arenas)
+	var ground := ProceduralMesh.create_platform(60.0, 60.0, 0.1, Color("#1a1a1a"))
 	ground.position.y = -12.0
 	add_child(ground)
 
-	# ═══ ARENA DECORATION ═══
-
-	# Tower 1 (left back) — antenna tower with cross bars
+func _build_arena_monterrey() -> void:
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#EA580C"))
+	var edge := ProceduralMesh.create_platform(16.2, 8.2, 0.1, Color("#9A3412"))
+	edge.position.y = -0.55
+	add_child(edge)
+	_add_solid_platform(Vector3(-5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
+	_add_solid_platform(Vector3(5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
 	_build_tower(Vector3(-6.0, 0.0, -3.0), 5.5, Color("#6B7280"), Color("#FCD34D"))
-
-	# Tower 2 (right back) — shorter tower
 	_build_tower(Vector3(6.0, 0.0, -3.0), 4.0, Color("#6B7280"), Color("#FCD34D"))
-
-	# Cable between towers (visual)
 	var cable := ProceduralMesh.create_cylinder(0.02, 12.5, 4, Color.BLACK)
 	cable.position = Vector3(0.0, 4.5, -3.0)
 	cable.rotation_degrees.z = 90.0
 	add_child(cable)
-
-	# Cerro de la Silla backdrop (mountains)
 	_build_mountains()
+	_build_hazard()
 
-	# Rooftop elements — small equipment boxes
-	var equip_box1 := ProceduralMesh.create_box(Vector3(0.6, 0.4, 0.5), Color("#4B5563"))
-	equip_box1.position = Vector3(-7.0, 0.2, 1.5)
-	add_child(equip_box1)
+func _build_arena_cdmx() -> void:
+	## Torre CDMX — Vertical tower with stacked platforms, swinging cable hazard
+	# Base platform (narrow)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(12.0, 0.5, 7.0), Color("#64748B"))
+	# Stacked vertical platforms (tower structure)
+	_add_solid_platform(Vector3(-3.0, 2.0, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
+	_add_solid_platform(Vector3(3.0, 3.5, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
+	_add_solid_platform(Vector3(-1.0, 5.0, 0), Vector3(3.5, 0.3, 3.0), Color("#475569"))
+	_add_solid_platform(Vector3(4.0, 6.5, 0), Vector3(3.0, 0.3, 2.5), Color("#475569"))
+	# Tower structure backdrop
+	_build_tower(Vector3(0.0, 0.0, -4.0), 10.0, Color("#334155"), Color("#3B82F6"))
+	_build_tower(Vector3(-5.0, 0.0, -3.0), 7.0, Color("#334155"), Color("#3B82F6"))
+	# Smog effect — gray fog planes
+	for i in range(3):
+		var fog := ProceduralMesh.create_platform(20.0, 15.0, 0.02, Color(0.6, 0.6, 0.65, 0.15))
+		fog.position = Vector3(0, 1.0 + i * 3.0, -5.0 - i * 3.0)
+		add_child(fog)
+	# Bellas Artes dome (backdrop)
+	var dome := ProceduralMesh.create_sphere(2.5, 8, Color("#D4A574"))
+	dome.position = Vector3(8.0, 2.0, -20.0)
+	add_child(dome)
+	var dome_base := ProceduralMesh.create_box(Vector3(5.0, 3.0, 4.0), Color("#E5E7EB"))
+	dome_base.position = Vector3(8.0, 0.5, -20.0)
+	add_child(dome_base)
+	_build_hazard()  # Rotating antenna
 
-	var equip_box2 := ProceduralMesh.create_box(Vector3(0.8, 0.3, 0.6), Color("#374151"))
-	equip_box2.position = Vector3(7.0, 0.15, 2.0)
-	add_child(equip_box2)
+func _build_arena_rio() -> void:
+	## Favela Rio — Tight close-quarters, colorful buildings, Cristo backdrop
+	# Main platform (narrower — tight quarters)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(14.0, 0.5, 6.0), Color("#16A34A"))
+	# Favela rooftop platforms (irregular heights)
+	_add_solid_platform(Vector3(-4.5, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#DC2626"))
+	_add_solid_platform(Vector3(4.5, 1.0, 0), Vector3(2.5, 0.3, 2.5), Color("#2563EB"))
+	_add_solid_platform(Vector3(-1.5, 2.8, 0), Vector3(2.5, 0.3, 2.5), Color("#FCD34D"))
+	_add_solid_platform(Vector3(2.0, 3.5, 0), Vector3(2.0, 0.3, 2.0), Color("#A855F7"))
+	# Colorful building walls (decoration)
+	var colors_favela := [Color("#DC2626"), Color("#2563EB"), Color("#FCD34D"), Color("#16A34A"), Color("#A855F7")]
+	for i in range(5):
+		var wall := ProceduralMesh.create_box(Vector3(2.5, 3.0 + i * 0.5, 1.0), colors_favela[i])
+		wall.position = Vector3(-6.0 + i * 3.0, 0.5, -3.0)
+		add_child(wall)
+	# Cristo Redentor backdrop
+	var cristo_body := ProceduralMesh.create_box(Vector3(0.8, 4.0, 0.6), Color("#E5E7EB"))
+	cristo_body.position = Vector3(0.0, 6.0, -25.0)
+	add_child(cristo_body)
+	var cristo_arms := ProceduralMesh.create_box(Vector3(5.0, 0.6, 0.4), Color("#E5E7EB"))
+	cristo_arms.position = Vector3(0.0, 7.5, -25.0)
+	add_child(cristo_arms)
+	var cristo_head := ProceduralMesh.create_sphere(0.6, 6, Color("#E5E7EB"))
+	cristo_head.position = Vector3(0.0, 8.5, -25.0)
+	add_child(cristo_head)
+	# Hill under Cristo
+	var hill := ProceduralMesh.create_cone(8.0, 6.0, 6, Color("#166534"))
+	hill.position = Vector3(0.0, 0.0, -25.0)
+	add_child(hill)
+	_build_hazard()
 
-	# Small satellite dish (decoration)
-	var dish_pole := ProceduralMesh.create_cylinder(0.04, 1.0, 4, Color("#9CA3AF"))
-	dish_pole.position = Vector3(-7.0, 0.9, -1.5)
-	add_child(dish_pole)
-	var dish := ProceduralMesh.create_cone(0.3, 0.2, 6, Color("#E2E8F0"))
-	dish.position = Vector3(-7.0, 1.5, -1.5)
-	dish.rotation_degrees.x = -45.0
-	add_child(dish)
+func _build_arena_dallas() -> void:
+	## Data Center Dallas — Server room corridors, neon cyan LEDs
+	# Main platform (dark industrial floor)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#1E293B"))
+	# Server rack platforms
+	_add_solid_platform(Vector3(-5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
+	_add_solid_platform(Vector3(5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
+	_add_solid_platform(Vector3(0.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#0F172A"))
+	# Server rack walls (visual, left and right)
+	for side in [-1, 1]:
+		for i in range(4):
+			var rack := ProceduralMesh.create_box(Vector3(1.2, 3.0, 0.8), Color("#0F172A"))
+			rack.position = Vector3(side * (3.0 + i * 1.5), 1.5, -2.5)
+			add_child(rack)
+			# LED lights on racks
+			for j in range(3):
+				var led := ProceduralMesh.create_sphere(0.04, 4, Color("#06B6D4"))
+				led.position = Vector3(side * (3.0 + i * 1.5) + 0.5, 0.8 + j * 0.8, -2.1)
+				add_child(led)
+	# Ceiling structure
+	var ceiling := ProceduralMesh.create_platform(18.0, 10.0, 0.1, Color("#1E293B"))
+	ceiling.position.y = 6.0
+	add_child(ceiling)
+	# Neon floor strips
+	for i in range(3):
+		var strip := ProceduralMesh.create_box(Vector3(16.0, 0.02, 0.1), Color("#06B6D4"))
+		strip.position = Vector3(0, 0.01, -2.0 + i * 2.0)
+		add_child(strip)
+	_build_hazard()
 
-	# ═══ SECTOR ANTENNA HAZARD ═══
+func _build_arena_bogota() -> void:
+	## Selva Bogotá — Jungle canopy with relay towers, foliage
+	# Main platform (mossy stone)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(15.0, 0.5, 7.0), Color("#166534"))
+	# Tree platforms
+	_add_solid_platform(Vector3(-5.0, 2.5, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
+	_add_solid_platform(Vector3(5.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
+	_add_solid_platform(Vector3(0.0, 4.5, 0), Vector3(2.5, 0.3, 2.0), Color("#15803D"))
+	# Tree trunks
+	for x in [-6.0, -2.0, 3.0, 7.0]:
+		var trunk := ProceduralMesh.create_cylinder(0.3, 8.0, 6, Color("#78350F"))
+		trunk.position = Vector3(x, 4.0, -3.0)
+		add_child(trunk)
+		# Canopy (big green sphere)
+		var canopy := ProceduralMesh.create_sphere(2.5, 6, Color("#166534"))
+		canopy.position = Vector3(x, 8.5, -3.0)
+		add_child(canopy)
+	# Vines (hanging cylinders)
+	for i in range(5):
+		var vine := ProceduralMesh.create_cylinder(0.02, 3.0, 4, Color("#22C55E"))
+		vine.position = Vector3(-4.0 + i * 2.5, 6.0, -2.0)
+		add_child(vine)
+	# Mist layers
+	for i in range(2):
+		var mist := ProceduralMesh.create_platform(20.0, 12.0, 0.02, Color(0.8, 0.9, 0.8, 0.1))
+		mist.position = Vector3(0, 0.5 + i * 2.0, -4.0)
+		add_child(mist)
+	# Relay tower in background
+	_build_tower(Vector3(0.0, 0.0, -8.0), 12.0, Color("#6B7280"), Color("#A3E635"))
+	_build_hazard()
+
+func _build_arena_buenos_aires() -> void:
+	## Pampa Buenos Aires — Wide open field, long-range towers, Obelisco
+	# Wide main platform (open pampa)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(20.0, 0.5, 10.0), Color("#78716C"))
+	# Distant elevated platforms (far apart for long-range combat)
+	_add_solid_platform(Vector3(-7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
+	_add_solid_platform(Vector3(7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
+	# Tall long-range towers
+	_build_tower(Vector3(-8.0, 0.0, -4.0), 8.0, Color("#9CA3AF"), Color("#F59E0B"))
+	_build_tower(Vector3(8.0, 0.0, -4.0), 8.0, Color("#9CA3AF"), Color("#F59E0B"))
+	# Cable between distant towers
+	var cable := ProceduralMesh.create_cylinder(0.02, 16.0, 4, Color.BLACK)
+	cable.position = Vector3(0.0, 7.5, -4.0)
+	cable.rotation_degrees.z = 90.0
+	add_child(cable)
+	# Golden grass (flat planes)
+	for i in range(8):
+		var grass := ProceduralMesh.create_platform(3.0, 2.0, 0.05, Color("#FDE68A"))
+		grass.position = Vector3(-9.0 + i * 2.8, 0.03, 3.0 + randf() * 2.0)
+		add_child(grass)
+	# Obelisco backdrop
+	var obelisco := ProceduralMesh.create_box(Vector3(0.8, 12.0, 0.8), Color("#E5E7EB"))
+	obelisco.position = Vector3(0.0, 6.0, -22.0)
+	add_child(obelisco)
+	var obelisco_tip := ProceduralMesh.create_cone(0.5, 1.5, 4, Color("#E5E7EB"))
+	obelisco_tip.position = Vector3(0.0, 12.5, -22.0)
+	add_child(obelisco_tip)
+	_build_hazard()
+
+func _build_arena_miami() -> void:
+	## Beach Miami — Beachfront + hotel rooftop, neon sunset
+	# Beach platform (sand colored)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#FDE68A"))
+	# Hotel rooftop platform (elevated right)
+	_add_solid_platform(Vector3(5.0, 2.5, 0), Vector3(4.0, 0.3, 3.5), Color("#F472B6"))
+	# Pool deck platform (left)
+	_add_solid_platform(Vector3(-5.0, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#38BDF8"))
+	# Hotel building backdrop
+	var hotel := ProceduralMesh.create_box(Vector3(5.0, 8.0, 3.0), Color("#F9A8D4"))
+	hotel.position = Vector3(5.0, 4.0, -4.0)
+	add_child(hotel)
+	# Hotel windows
+	for row in range(4):
+		for col in range(3):
+			var win := ProceduralMesh.create_box(Vector3(0.6, 0.5, 0.1), Color("#38BDF8"))
+			win.position = Vector3(3.5 + col * 1.2, 2.0 + row * 1.5, -2.45)
+			add_child(win)
+	# Palm trees
+	for x in [-7.0, -3.0, 7.0]:
+		var trunk := ProceduralMesh.create_cylinder(0.15, 4.0, 6, Color("#92400E"))
+		trunk.position = Vector3(x, 2.0, -1.5)
+		trunk.rotation_degrees.z = 5.0
+		add_child(trunk)
+		# Palm fronds (flattened green spheres)
+		var fronds := ProceduralMesh.create_sphere(1.2, 6, Color("#22C55E"))
+		fronds.position = Vector3(x, 4.5, -1.5)
+		add_child(fronds)
+	# Ocean backdrop
+	var ocean := ProceduralMesh.create_platform(40.0, 30.0, 0.1, Color("#0EA5E9"))
+	ocean.position = Vector3(0, -0.5, -15.0)
+	add_child(ocean)
+	_build_hazard()
+
+func _build_arena_wispa() -> void:
+	## WISPA Convention Center — Vendor booths as platforms, stage, event lighting
+	# Main convention floor
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(18.0, 0.5, 9.0), Color("#1D4ED8"))
+	# Vendor booth platforms
+	_add_solid_platform(Vector3(-5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
+	_add_solid_platform(Vector3(5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
+	# Stage platform (center elevated)
+	_add_solid_platform(Vector3(0, 3.0, 0), Vector3(5.0, 0.4, 3.5), Color("#3B82F6"))
+	# Vendor booth walls with brand colors
+	var booth_colors := [Color("#1E40AF"), Color("#3B82F6"), Color("#7C3AED"), Color("#059669")]
+	for i in range(4):
+		var booth := ProceduralMesh.create_box(Vector3(2.0, 2.5, 0.5), booth_colors[i])
+		booth.position = Vector3(-5.0 + i * 3.5, 1.25, -3.0)
+		add_child(booth)
+		# Banner on top
+		var banner := ProceduralMesh.create_box(Vector3(2.2, 0.6, 0.1), Color.WHITE)
+		banner.position = Vector3(-5.0 + i * 3.5, 2.8, -3.0)
+		add_child(banner)
+	# Big screen backdrop
+	var screen := ProceduralMesh.create_box(Vector3(10.0, 5.0, 0.2), Color("#0F172A"))
+	screen.position = Vector3(0, 5.0, -5.0)
+	add_child(screen)
+	# SIGNAL SMASH on screen (colored accent bars)
+	var bar1 := ProceduralMesh.create_box(Vector3(4.0, 0.3, 0.1), Color("#06B6D4"))
+	bar1.position = Vector3(-1.5, 6.5, -4.85)
+	add_child(bar1)
+	var bar2 := ProceduralMesh.create_box(Vector3(3.5, 0.3, 0.1), Color("#F59E0B"))
+	bar2.position = Vector3(1.5, 6.0, -4.85)
+	add_child(bar2)
+	# Spotlights (colored spheres above)
+	for i in range(5):
+		var spot := ProceduralMesh.create_sphere(0.2, 6, Color("#FBBF24"))
+		spot.position = Vector3(-4.0 + i * 2.0, 8.0, -2.0)
+		add_child(spot)
 	_build_hazard()
 
 func _build_tower(pos: Vector3, height: float, color: Color, accent: Color) -> void:
@@ -231,15 +437,45 @@ func _add_solid_platform(pos: Vector3, size: Vector3, color: Color) -> void:
 	add_child(body)
 
 func _build_fighters() -> void:
-	_fighter1 = _create_fighter(1, Vector3(-3.0, 1.0, 0.0), Color("#2563EB"), Color("#1E40AF"), Color("#FCD34D"), "RICO")
+	var p1 := GameMgr.get_p1()
+	_fighter1 = _create_fighter(1, Vector3(-3.0, 1.0, 0.0), p1["color"], p1["secondary"], p1["accent"], p1["name"])
 	add_child(_fighter1)
+	_apply_equipment(_fighter1, GameMgr.p1_equipment)
+	_fighter1.add_to_group("fighters")
 
-	_fighter2 = _create_fighter(2, Vector3(3.0, 1.0, 0.0), Color("#7C3AED"), Color("#4C1D95"), Color("#06B6D4"), "VERO")
+	var p2 := GameMgr.get_p2()
+	_fighter2 = _create_fighter(2, Vector3(3.0, 1.0, 0.0), p2["color"], p2["secondary"], p2["accent"], p2["name"])
 	_fighter2.set("facing_right", false)
 	add_child(_fighter2)
+	_apply_equipment(_fighter2, GameMgr.p2_equipment)
+	_fighter2.add_to_group("fighters")
 
 	# Assign controllers from InputManager
 	_assign_controllers()
+
+## Apply equipment modifiers to a fighter
+func _apply_equipment(fighter: CharacterBody3D, equipment: Dictionary) -> void:
+	var mods := GameMgr.get_equipment_modifiers(equipment)
+	# Speed: +10 stat ≈ +1.0 move speed
+	fighter.equip_speed_mod = mods["speed"] / 10.0
+	# Power: +10 stat ≈ +20% damage
+	fighter.equip_power_mod = mods["power"] / 50.0
+	# Defense: +10 stat ≈ 10% damage reduction (max 50%)
+	fighter.equip_defense_mod = clampf(mods["stability"] / 100.0, 0.0, 0.5)
+	# Range: +10 stat ≈ +10% hitbox scale
+	fighter.equip_range_mod = mods["range"] / 100.0
+	# Special passives
+	fighter.equip_specials = GameMgr.get_equipment_specials(equipment)
+
+	# Scale hitbox based on range modifier
+	var hitbox_scale: float = fighter.get_hitbox_scale()
+	if hitbox_scale != 1.0:
+		var hitbox: Area3D = fighter.get_node_or_null("Model/Hitbox")
+		if hitbox:
+			hitbox.scale = Vector3(hitbox_scale, hitbox_scale, hitbox_scale)
+
+	if fighter.equip_specials.size() > 0:
+		print("[FIGHT] P%d equipment specials: %s" % [fighter.player_id, ", ".join(fighter.equip_specials)])
 
 func _assign_controllers() -> void:
 	if InputManager == null:
@@ -289,10 +525,17 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 	var model_node := Node3D.new()
 	model_node.name = "Model"
 
-	if fighter_name == "RICO":
-		_build_rico_model(model_node, primary, secondary, accent)
-	else:
-		_build_vero_model(model_node, primary, secondary, accent)
+	match fighter_name:
+		"RICO":
+			_build_rico_model(model_node, primary, secondary, accent)
+		"ING. VERO":
+			_build_vero_model(model_node, primary, secondary, accent)
+		"DON AURELIO":
+			_build_aurelio_model(model_node, primary, secondary, accent)
+		"MORXEL":
+			_build_morxel_model(model_node, primary, secondary, accent)
+		_:
+			_build_rico_model(model_node, primary, secondary, accent)
 
 	# Name label
 	var label := Label3D.new()
@@ -341,21 +584,26 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 	hit_visual.visible = false
 	hitbox.add_child(hit_visual)
 
-	# Connect hitbox to damage
+	# Connect hitbox to damage (uses attacker's power modifier)
 	hitbox.area_entered.connect(func(area: Area3D) -> void:
 		if area.name == "Hurtbox" and area.get_parent() != fighter:
 			var target = area.get_parent()
 			if target and target.has_method("take_damage") and not target.is_invincible:
-				target.take_damage(ATTACK_DAMAGE, fighter.global_position, ATTACK_KNOCKBACK)
+				var dmg: float = ATTACK_DAMAGE * fighter.get_damage_multiplier()
+				var kb: float = ATTACK_KNOCKBACK * fighter.get_damage_multiplier()
+				target.take_damage(dmg, fighter.global_position, kb)
+				# Charge attacker's combo meter
+				fighter.combo_meter = minf(fighter.combo_meter + fighter.COMBO_HIT_CHARGE, fighter.COMBO_MAX)
 				# Hit SFX
 				if AudioManager:
 					AudioManager.play_sfx("hit_light")
 					if target.signal_percent <= 0.0:
 						AudioManager.play_sfx("link_down", 3.0)
-				print("[FIGHT] P%d hit P%d! Target signal: %.0f%%" % [
-					fighter.player_id, target.player_id, target.signal_percent])
+				print("[FIGHT] P%d hit P%d for %.1f dmg! Target signal: %.0f%%" % [
+					fighter.player_id, target.player_id, dmg, target.signal_percent])
 	)
-	fighter.add_child(hitbox)
+	# Hitbox is child of Model so it rotates with facing direction
+	model_node.add_child(hitbox)
 
 	# State machine
 	var sm := Node.new()
@@ -455,11 +703,146 @@ func _build_hud() -> void:
 	_hud_label.add_theme_constant_override("shadow_offset_y", 1)
 	canvas.add_child(_hud_label)
 
+## ═══════════ COMBO CINEMATIC STATE ═══════════
+var _combo_attacker: CharacterBody3D = null
+var _combo_target: CharacterBody3D = null
+var _combo_phase: int = 0  # 0=zoom, 1=attack, 2=flash, 3=damage, 4=done
+var _combo_phase_timer: float = 0.0
+var _combo_flash_alpha: float = 0.0
+var _combo_label: Label = null
+var _combo_flash_rect: ColorRect = null
+var _camera_original_pos: Vector3
+
 func _process(delta: float) -> void:
+	# If combo cinematic is active, run that instead of normal game
+	if _combo_attacker != null:
+		_update_combo_cinematic(delta)
+		return
+
 	_update_p2_movement()
 	_update_hazard(delta)
 	_update_hud()
 	_update_camera()
+	_check_fight_end(delta)
+	_update_combo_meters()
+
+func _update_combo_meters() -> void:
+	# Check combo timer decay for active combos in fighter_base
+	for f in [_fighter1, _fighter2]:
+		if f and f.combo_active:
+			f.combo_timer -= get_process_delta_time()
+			if f.combo_timer <= 0:
+				f.combo_active = false
+				f.is_invincible = false
+
+func _trigger_combo(attacker: CharacterBody3D, target: CharacterBody3D) -> void:
+	_combo_attacker = attacker
+	_combo_target = target
+	_combo_phase = 0
+	_combo_phase_timer = 0.0
+	_camera_original_pos = _camera.position
+
+	attacker.activate_combo()
+	attacker.velocity = Vector3.ZERO
+	target.velocity = Vector3.ZERO
+
+	# Create flash overlay
+	if _combo_flash_rect == null:
+		var canvas := CanvasLayer.new()
+		canvas.layer = 20
+		add_child(canvas)
+		_combo_flash_rect = ColorRect.new()
+		_combo_flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_combo_flash_rect.color = Color(1, 1, 1, 0)
+		_combo_flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		canvas.add_child(_combo_flash_rect)
+		_combo_label = Label.new()
+		_combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_combo_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_combo_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_combo_label.add_theme_font_size_override("font_size", 64)
+		_combo_label.add_theme_color_override("font_color", Color("#06B6D4"))
+		_combo_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		_combo_label.add_theme_constant_override("shadow_offset_x", 3)
+		_combo_label.add_theme_constant_override("shadow_offset_y", 3)
+		_combo_label.text = ""
+		_combo_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		canvas.add_child(_combo_label)
+
+	if AudioManager:
+		AudioManager.play_sfx("fight_start")
+
+func _update_combo_cinematic(delta: float) -> void:
+	_combo_phase_timer += delta
+
+	match _combo_phase:
+		0:  # Zoom out — 0.8s
+			var progress := clampf(_combo_phase_timer / 0.8, 0.0, 1.0)
+			var center := (_combo_attacker.global_position + _combo_target.global_position) / 2.0
+			_camera.position = _camera.position.lerp(Vector3(center.x, center.y + 5.0, 18.0), 0.1)
+			_combo_label.text = ""
+			if _combo_phase_timer >= 0.8:
+				_combo_phase = 1
+				_combo_phase_timer = 0.0
+				# Get character-specific combo name
+				var char_name: String = ""
+				if _combo_attacker == _fighter1:
+					char_name = GameMgr.get_p1()["name"]
+				else:
+					char_name = GameMgr.get_p2()["name"]
+				var combo_name := _get_combo_name(char_name)
+				_combo_label.text = combo_name
+				if AudioManager:
+					AudioManager.play_sfx("hit_heavy")
+
+		1:  # Character attack name display — 1.0s
+			# Shake camera
+			_camera.position.x += randf_range(-0.1, 0.1)
+			_camera.position.y += randf_range(-0.05, 0.05)
+			# Move attacker toward target
+			var dir := (_combo_target.global_position - _combo_attacker.global_position).normalized()
+			_combo_attacker.global_position += dir * delta * 8.0
+			if _combo_phase_timer >= 1.0:
+				_combo_phase = 2
+				_combo_phase_timer = 0.0
+				_combo_label.text = "FULL SIGNAL\nACHIEVED"
+				_combo_label.add_theme_color_override("font_color", Color("#F59E0B"))
+				_combo_flash_alpha = 1.0
+				if AudioManager:
+					AudioManager.play_sfx("victory")
+					AudioManager.play_sfx("hit_critical")
+
+		2:  # Flash + FULL SIGNAL text — 1.0s
+			_combo_flash_alpha = maxf(_combo_flash_alpha - delta * 1.5, 0.0)
+			_combo_flash_rect.color = Color(1, 1, 1, _combo_flash_alpha)
+			# Apply massive damage to target
+			if _combo_phase_timer < delta * 2:  # Only first frame
+				var combo_damage: float = 35.0
+				var combo_kb: float = 12.0
+				_combo_target.take_damage(combo_damage, _combo_attacker.global_position, combo_kb)
+				print("[FIGHT] FULL SIGNAL COMBO! %.0f damage to P%d!" % [combo_damage, _combo_target.player_id])
+			if _combo_phase_timer >= 1.0:
+				_combo_phase = 3
+				_combo_phase_timer = 0.0
+
+		3:  # Return to normal — 0.5s
+			_combo_flash_rect.color = Color(1, 1, 1, 0)
+			_combo_label.text = ""
+			_combo_label.add_theme_color_override("font_color", Color("#06B6D4"))
+			_camera.position = _camera.position.lerp(_camera_original_pos, 0.15)
+			if _combo_phase_timer >= 0.5:
+				_combo_attacker.combo_active = false
+				_combo_attacker.is_invincible = false
+				_combo_attacker = null
+				_combo_target = null
+
+func _get_combo_name(char_name: String) -> String:
+	match char_name:
+		"RICO": return "CABLE WHIP\nSURGE"
+		"ING. VERO": return "INTERFERENCE\nBLAST"
+		"DON AURELIO": return "TOWER\nSLAM"
+		"MORXEL": return "DDoS\nSWARM"
+		_: return "FULL\nSIGNAL"
 
 func _update_hazard(delta: float) -> void:
 	if _hazard_antenna:
@@ -524,16 +907,21 @@ func _update_hud() -> void:
 	var state1: String = sm1.current_state.name if sm1 and sm1.current_state else "?"
 	var state2: String = sm2.current_state.name if sm2 and sm2.current_state else "?"
 
-	_hud_label.text = """SIGNAL SMASH — Fight Test (E0.1)
+	var p1_name: String = GameMgr.get_p1()["name"]
+	var p2_name: String = GameMgr.get_p2()["name"]
+	var arena_name: String = GameMgr.get_arena()["name"]
+	var p1_combo: String = "FULL SIGNAL READY! [E]" if _fighter1.can_activate_combo() else "Combo: %.0f%%" % _fighter1.combo_meter
+	var p2_combo: String = "FULL SIGNAL READY! [O]" if _fighter2.can_activate_combo() else "Combo: %.0f%%" % _fighter2.combo_meter
+	_hud_label.text = """SIGNAL SMASH — %s  |  Round %d/%d  [P1: %d - P2: %d]
 
-P1 RICO:  Signal %.0f%%  |  Damage %.0f  |  State: %s
-P2 VERO:  Signal %.0f%%  |  Damage %.0f  |  State: %s
+P1 %s:  Signal %.0f%%  |  Damage %.0f  |  %s  |  %s
+P2 %s:  Signal %.0f%%  |  Damage %.0f  |  %s  |  %s
 
-Controls P1: WASD move | SPACE jump | J attack
-Controls P2: Arrows move | Shift jump | Ctrl/L attack
-TAB = Toggle NOC Dashboard Spectator | R = Reset""" % [
-		_fighter1.signal_percent, _fighter1.damage_accumulated, state1,
-		_fighter2.signal_percent, _fighter2.damage_accumulated, state2
+P1: WASD+SPACE+J+Q(special)+E(combo)  |  P2: Arrows+Shift+L+K(special)+O(combo)
+TAB = NOC Dashboard | R = Reset""" % [
+		arena_name, _round, _max_rounds, _p1_round_wins, _p2_round_wins,
+		p1_name, _fighter1.signal_percent, _fighter1.damage_accumulated, state1, p1_combo,
+		p2_name, _fighter2.signal_percent, _fighter2.damage_accumulated, state2, p2_combo
 	]
 
 func _update_camera() -> void:
@@ -546,6 +934,99 @@ func _update_camera() -> void:
 
 	_camera.position = _camera.position.lerp(
 		Vector3(center.x, center.y + 4.0, target_z), 0.05)
+
+func _check_fight_end(delta: float) -> void:
+	# Match over — waiting to go to victory screen
+	if _match_over:
+		_fight_over_timer -= delta
+		if _fight_over_timer <= 0.0:
+			get_tree().change_scene_to_file("res://scenes/main/victory_screen.tscn")
+		return
+
+	# Round over — waiting to start next round
+	if _round_over:
+		_round_over_timer -= delta
+		if _round_over_timer <= 0.0:
+			_start_next_round()
+		return
+
+	if _fighter1 == null or _fighter2 == null:
+		return
+
+	# Check if either fighter is KO'd
+	var p1_ko: bool = _fighter1.signal_percent <= 0.0
+	var p2_ko: bool = _fighter2.signal_percent <= 0.0
+
+	if not p1_ko and not p2_ko:
+		return
+
+	# Someone got KO'd — determine round winner
+	_round_over = true
+
+	if p2_ko and not p1_ko:
+		_p1_round_wins += 1
+		print("[FIGHT] Round %d: P1 WINS! (Score: P1 %d - P2 %d)" % [_round, _p1_round_wins, _p2_round_wins])
+	elif p1_ko and not p2_ko:
+		_p2_round_wins += 1
+		print("[FIGHT] Round %d: P2 WINS! (Score: P1 %d - P2 %d)" % [_round, _p1_round_wins, _p2_round_wins])
+	else:
+		# Double KO — no one gets a point
+		print("[FIGHT] Round %d: DOUBLE KO!" % _round)
+
+	if AudioManager:
+		AudioManager.play_sfx("round_end")
+
+	# Check if match is decided (best of 3 = first to 2 wins)
+	var wins_needed: int = (_max_rounds / 2) + 1
+	if _p1_round_wins >= wins_needed or _p2_round_wins >= wins_needed or _round >= _max_rounds:
+		_end_match()
+	else:
+		_round_over_timer = 2.5  # Pause before next round
+
+func _start_next_round() -> void:
+	_round += 1
+	_round_over = false
+	_round_over_timer = 0.0
+
+	# Reset both fighters
+	_fighter1.position = Vector3(-3.0, 1.0, 0.0)
+	_fighter1.reset_fighter()
+	_fighter2.position = Vector3(3.0, 1.0, 0.0)
+	_fighter2.reset_fighter()
+	_fighter2.set("facing_right", false)
+	var f2_model = _fighter2.get_node_or_null("Model")
+	if f2_model:
+		f2_model.rotation_degrees.y = 180.0
+
+	print("[FIGHT] === ROUND %d ===" % _round)
+	if AudioManager:
+		AudioManager.play_sfx("fight_start")
+
+func _end_match() -> void:
+	_match_over = true
+	_fight_over_timer = 2.5  # Pause before victory screen
+
+	# Record result in progression
+	var phase_before: int = Progression.current_phase
+	var p1_won: bool = _p1_round_wins > _p2_round_wins
+
+	if p1_won:
+		var result := Progression.record_fight_win(_fighter1.damage_accumulated)
+		result["phase_before"] = phase_before
+		result["p1_rounds"] = _p1_round_wins
+		result["p2_rounds"] = _p2_round_wins
+		Progression.last_fight_result = result
+		print("[FIGHT] MATCH OVER: P1 WINS %d-%d! +%d SP" % [_p1_round_wins, _p2_round_wins, result["sp_earned"]])
+	else:
+		var result := Progression.record_fight_loss(_fighter1.damage_accumulated)
+		result["phase_before"] = phase_before
+		result["p1_rounds"] = _p1_round_wins
+		result["p2_rounds"] = _p2_round_wins
+		Progression.last_fight_result = result
+		print("[FIGHT] MATCH OVER: P2 WINS %d-%d! P1 gets +%d SP" % [_p2_round_wins, _p1_round_wins, result["sp_earned"]])
+
+	if AudioManager:
+		AudioManager.stop_music()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
@@ -561,6 +1042,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_spectator_mode = not _spectator_mode
 			_spectator_hud.visible = _spectator_mode
 			_hud_label.visible = not _spectator_mode
+
+		# P1 Special (Q key)
+		if event.keycode == KEY_Q:
+			_fighter1.activate_special()
+
+		# P1 FULL SIGNAL COMBO (E key)
+		if event.keycode == KEY_E and _combo_attacker == null:
+			if _fighter1.can_activate_combo():
+				_trigger_combo(_fighter1, _fighter2)
 
 		# Back to menu
 		if event.keycode == KEY_ESCAPE:
@@ -592,6 +1082,15 @@ func _handle_p2_input(event: InputEventKey) -> void:
 	# P2 attack (Right Ctrl or L key for easier testing)
 	if event.pressed and (event.keycode == KEY_CTRL or event.keycode == KEY_L):
 		f2_sm._on_state_transition("attack")
+
+	# P2 Special (K key)
+	if event.pressed and event.keycode == KEY_K:
+		_fighter2.activate_special()
+
+	# P2 FULL SIGNAL COMBO (O key)
+	if event.pressed and event.keycode == KEY_O and _combo_attacker == null:
+		if _fighter2.can_activate_combo():
+			_trigger_combo(_fighter2, _fighter1)
 
 ## ═══════════ CHARACTER MODELS ═══════════
 
@@ -841,3 +1340,333 @@ func _build_vero_model(model: Node3D, primary: Color, secondary: Color, accent: 
 	var badge_text := ProceduralMesh.create_box(Vector3(0.06, 0.03, 0.01), primary)
 	badge_text.position = Vector3(-0.15, 0.96, 0.18)
 	model.add_child(badge_text)
+
+func _build_aurelio_model(model: Node3D, primary: Color, secondary: Color, accent: Color) -> void:
+	## Don Aurelio — Old School Veteran. Brown/gold. Sombrero, big mustache, poncho, vintage tools.
+	var skin := Color("#B8845C")
+
+	# Boots (worn leather, chunky old-style)
+	var boot_l := ProceduralMesh.create_box(Vector3(0.15, 0.16, 0.22), Color("#4A3520"))
+	boot_l.position = Vector3(-0.16, 0.08, 0.02)
+	model.add_child(boot_l)
+	var boot_r := ProceduralMesh.create_box(Vector3(0.15, 0.16, 0.22), Color("#4A3520"))
+	boot_r.position = Vector3(0.16, 0.08, 0.02)
+	model.add_child(boot_r)
+	# Boot soles (darker)
+	var sole_l := ProceduralMesh.create_box(Vector3(0.16, 0.04, 0.24), Color("#2A1A0E"))
+	sole_l.position = Vector3(-0.16, 0.02, 0.02)
+	model.add_child(sole_l)
+	var sole_r := ProceduralMesh.create_box(Vector3(0.16, 0.04, 0.24), Color("#2A1A0E"))
+	sole_r.position = Vector3(0.16, 0.02, 0.02)
+	model.add_child(sole_r)
+
+	# Legs (sturdy work pants — secondary color)
+	var leg_l := ProceduralMesh.create_cylinder(0.1, 0.42, 6, secondary)
+	leg_l.position = Vector3(-0.16, 0.38, 0.0)
+	model.add_child(leg_l)
+	var leg_r := ProceduralMesh.create_cylinder(0.1, 0.42, 6, secondary)
+	leg_r.position = Vector3(0.16, 0.38, 0.0)
+	model.add_child(leg_r)
+
+	# Belt (thick leather)
+	var belt := ProceduralMesh.create_cylinder(0.34, 0.07, 8, Color("#3B2507"))
+	belt.position.y = 0.6
+	model.add_child(belt)
+	# Big belt buckle (gold accent)
+	var buckle := ProceduralMesh.create_box(Vector3(0.1, 0.08, 0.06), accent)
+	buckle.position = Vector3(0.0, 0.6, 0.32)
+	model.add_child(buckle)
+
+	# Tool holster — left side (vintage wrench)
+	var holster := ProceduralMesh.create_box(Vector3(0.08, 0.18, 0.06), Color("#5C3D1E"))
+	holster.position = Vector3(-0.35, 0.55, 0.0)
+	model.add_child(holster)
+	var wrench := ProceduralMesh.create_box(Vector3(0.03, 0.22, 0.03), Color("#888888"))
+	wrench.position = Vector3(-0.35, 0.58, 0.04)
+	model.add_child(wrench)
+
+	# Torso (wide, stocky build — primary brown)
+	var torso := ProceduralMesh.create_box(Vector3(0.55, 0.48, 0.34), primary)
+	torso.position.y = 0.88
+	model.add_child(torso)
+
+	# Poncho/serape over shoulders (accent gold, draped)
+	var poncho_front := ProceduralMesh.create_box(Vector3(0.6, 0.3, 0.08), accent)
+	poncho_front.position = Vector3(0.0, 1.0, 0.18)
+	poncho_front.rotation_degrees.x = -5.0
+	model.add_child(poncho_front)
+	var poncho_back := ProceduralMesh.create_box(Vector3(0.6, 0.35, 0.08), accent.darkened(0.15))
+	poncho_back.position = Vector3(0.0, 0.95, -0.18)
+	poncho_back.rotation_degrees.x = 5.0
+	model.add_child(poncho_back)
+	# Poncho zigzag stripe (decorative)
+	var stripe := ProceduralMesh.create_box(Vector3(0.5, 0.04, 0.02), Color("#FFFFFF"))
+	stripe.position = Vector3(0.0, 1.02, 0.23)
+	model.add_child(stripe)
+	var stripe2 := ProceduralMesh.create_box(Vector3(0.5, 0.04, 0.02), Color("#DC2626"))
+	stripe2.position = Vector3(0.0, 0.96, 0.23)
+	model.add_child(stripe2)
+
+	# Arms (thick, strong — primary color)
+	var arm_l := ProceduralMesh.create_cylinder(0.1, 0.45, 6, primary)
+	arm_l.position = Vector3(-0.38, 0.75, 0.0)
+	arm_l.rotation_degrees.z = 15.0
+	model.add_child(arm_l)
+	var arm_r := ProceduralMesh.create_cylinder(0.1, 0.45, 6, primary)
+	arm_r.position = Vector3(0.38, 0.75, 0.0)
+	arm_r.rotation_degrees.z = -15.0
+	model.add_child(arm_r)
+
+	# Hands (weathered, large — skin tone)
+	var hand_l := ProceduralMesh.create_sphere(0.1, 6, skin.darkened(0.1))
+	hand_l.position = Vector3(-0.42, 0.52, 0.0)
+	model.add_child(hand_l)
+	var hand_r := ProceduralMesh.create_sphere(0.1, 6, skin.darkened(0.1))
+	hand_r.position = Vector3(0.42, 0.52, 0.0)
+	model.add_child(hand_r)
+
+	# Neck (thick)
+	var neck := ProceduralMesh.create_cylinder(0.09, 0.1, 6, skin)
+	neck.position.y = 1.18
+	model.add_child(neck)
+
+	# Head (slightly larger, weathered)
+	var head := ProceduralMesh.create_sphere(0.24, 8, skin)
+	head.position.y = 1.38
+	model.add_child(head)
+
+	# Big mustache (signature feature — dark gray)
+	var mustache_l := ProceduralMesh.create_box(Vector3(0.14, 0.04, 0.08), Color("#3D3D3D"))
+	mustache_l.position = Vector3(-0.08, 1.33, 0.2)
+	mustache_l.rotation_degrees.z = -10.0
+	model.add_child(mustache_l)
+	var mustache_r := ProceduralMesh.create_box(Vector3(0.14, 0.04, 0.08), Color("#3D3D3D"))
+	mustache_r.position = Vector3(0.08, 1.33, 0.2)
+	mustache_r.rotation_degrees.z = 10.0
+	model.add_child(mustache_r)
+	# Mustache center
+	var mustache_c := ProceduralMesh.create_box(Vector3(0.06, 0.035, 0.06), Color("#3D3D3D"))
+	mustache_c.position = Vector3(0.0, 1.34, 0.22)
+	model.add_child(mustache_c)
+	# Mustache tips (curled down)
+	var tip_l := ProceduralMesh.create_cylinder(0.02, 0.06, 4, Color("#3D3D3D"))
+	tip_l.position = Vector3(-0.16, 1.3, 0.18)
+	tip_l.rotation_degrees.z = -20.0
+	model.add_child(tip_l)
+	var tip_r := ProceduralMesh.create_cylinder(0.02, 0.06, 4, Color("#3D3D3D"))
+	tip_r.position = Vector3(0.16, 1.3, 0.18)
+	tip_r.rotation_degrees.z = 20.0
+	model.add_child(tip_r)
+
+	# Eyes (squinting, experienced)
+	var eye_l := ProceduralMesh.create_sphere(0.04, 6, Color.WHITE)
+	eye_l.position = Vector3(-0.09, 1.42, 0.19)
+	model.add_child(eye_l)
+	var pupil_l := ProceduralMesh.create_sphere(0.025, 6, Color("#1C1917"))
+	pupil_l.position = Vector3(-0.09, 1.42, 0.23)
+	model.add_child(pupil_l)
+	var eye_r := ProceduralMesh.create_sphere(0.04, 6, Color.WHITE)
+	eye_r.position = Vector3(0.09, 1.42, 0.19)
+	model.add_child(eye_r)
+	var pupil_r := ProceduralMesh.create_sphere(0.025, 6, Color("#1C1917"))
+	pupil_r.position = Vector3(0.09, 1.42, 0.23)
+	model.add_child(pupil_r)
+	# Bushy eyebrows
+	var brow_l := ProceduralMesh.create_box(Vector3(0.08, 0.025, 0.04), Color("#4D4D4D"))
+	brow_l.position = Vector3(-0.09, 1.47, 0.2)
+	brow_l.rotation_degrees.z = 5.0
+	model.add_child(brow_l)
+	var brow_r := ProceduralMesh.create_box(Vector3(0.08, 0.025, 0.04), Color("#4D4D4D"))
+	brow_r.position = Vector3(0.09, 1.47, 0.2)
+	brow_r.rotation_degrees.z = -5.0
+	model.add_child(brow_r)
+
+	# Sombrero (wide brim + tall crown — accent gold)
+	var sombrero_brim := ProceduralMesh.create_cylinder(0.42, 0.04, 10, accent)
+	sombrero_brim.position.y = 1.54
+	model.add_child(sombrero_brim)
+	var sombrero_crown := ProceduralMesh.create_cylinder(0.18, 0.2, 8, accent)
+	sombrero_crown.position.y = 1.65
+	model.add_child(sombrero_crown)
+	var sombrero_top := ProceduralMesh.create_cylinder(0.19, 0.03, 8, accent.darkened(0.1))
+	sombrero_top.position.y = 1.76
+	model.add_child(sombrero_top)
+	# Sombrero band (decorative)
+	var hat_band := ProceduralMesh.create_cylinder(0.19, 0.04, 8, Color("#DC2626"))
+	hat_band.position.y = 1.57
+	model.add_child(hat_band)
+
+	# Old-school antenna on back (long yagi-style)
+	var yagi_boom := ProceduralMesh.create_cylinder(0.015, 0.5, 4, Color("#888888"))
+	yagi_boom.position = Vector3(0.0, 0.95, -0.28)
+	yagi_boom.rotation_degrees.x = 20.0
+	model.add_child(yagi_boom)
+	# Yagi elements
+	for i in range(4):
+		var el := ProceduralMesh.create_box(Vector3(0.18 - i * 0.02, 0.015, 0.015), Color("#AAAAAA"))
+		el.position = Vector3(0.0, 1.05 + i * 0.1, -0.3 - i * 0.03)
+		model.add_child(el)
+
+func _build_morxel_model(model: Node3D, primary: Color, secondary: Color, accent: Color) -> void:
+	## MorXel — Reality Hacker. Green/emerald. Hoodie, terminal visor, digital glitch aesthetic.
+	var skin := Color("#8B7355")
+
+	# Boots (tech/tactical — dark with green accents)
+	var boot_l := ProceduralMesh.create_box(Vector3(0.13, 0.14, 0.2), Color("#1A1A2E"))
+	boot_l.position = Vector3(-0.14, 0.07, 0.02)
+	model.add_child(boot_l)
+	var boot_r := ProceduralMesh.create_box(Vector3(0.13, 0.14, 0.2), Color("#1A1A2E"))
+	boot_r.position = Vector3(0.14, 0.07, 0.02)
+	model.add_child(boot_r)
+	# Boot accent strips (glowing green)
+	var strip_l := ProceduralMesh.create_box(Vector3(0.02, 0.12, 0.18), accent)
+	strip_l.position = Vector3(-0.2, 0.08, 0.02)
+	model.add_child(strip_l)
+	var strip_r := ProceduralMesh.create_box(Vector3(0.02, 0.12, 0.18), accent)
+	strip_r.position = Vector3(0.2, 0.08, 0.02)
+	model.add_child(strip_r)
+
+	# Legs (dark cargo pants)
+	var leg_l := ProceduralMesh.create_cylinder(0.085, 0.44, 6, secondary)
+	leg_l.position = Vector3(-0.14, 0.37, 0.0)
+	model.add_child(leg_l)
+	var leg_r := ProceduralMesh.create_cylinder(0.085, 0.44, 6, secondary)
+	leg_r.position = Vector3(0.14, 0.37, 0.0)
+	model.add_child(leg_r)
+
+	# Belt (tech belt with glowing buckle)
+	var belt := ProceduralMesh.create_cylinder(0.3, 0.05, 8, Color("#0F172A"))
+	belt.position.y = 0.59
+	model.add_child(belt)
+	var buckle := ProceduralMesh.create_box(Vector3(0.06, 0.06, 0.04), accent)
+	buckle.position = Vector3(0.0, 0.59, 0.28)
+	model.add_child(buckle)
+
+	# Utility pouches (hacking tools)
+	var pouch_l := ProceduralMesh.create_box(Vector3(0.07, 0.08, 0.05), Color("#1E293B"))
+	pouch_l.position = Vector3(-0.3, 0.57, 0.05)
+	model.add_child(pouch_l)
+	var pouch_r := ProceduralMesh.create_box(Vector3(0.07, 0.08, 0.05), Color("#1E293B"))
+	pouch_r.position = Vector3(0.3, 0.57, 0.05)
+	model.add_child(pouch_r)
+
+	# Torso (hoodie — primary green)
+	var torso := ProceduralMesh.create_box(Vector3(0.48, 0.46, 0.3), primary)
+	torso.position.y = 0.86
+	model.add_child(torso)
+
+	# Hoodie front pocket (kangaroo pocket)
+	var pocket := ProceduralMesh.create_box(Vector3(0.3, 0.12, 0.04), primary.darkened(0.15))
+	pocket.position = Vector3(0.0, 0.72, 0.17)
+	model.add_child(pocket)
+
+	# Hood (draped behind head)
+	var hood := ProceduralMesh.create_box(Vector3(0.35, 0.2, 0.18), primary.darkened(0.1))
+	hood.position = Vector3(0.0, 1.2, -0.15)
+	model.add_child(hood)
+
+	# Arms (hoodie sleeves)
+	var arm_l := ProceduralMesh.create_cylinder(0.075, 0.44, 6, primary)
+	arm_l.position = Vector3(-0.32, 0.73, 0.0)
+	arm_l.rotation_degrees.z = 12.0
+	model.add_child(arm_l)
+	var arm_r := ProceduralMesh.create_cylinder(0.075, 0.44, 6, primary)
+	arm_r.position = Vector3(0.32, 0.73, 0.0)
+	arm_r.rotation_degrees.z = -12.0
+	model.add_child(arm_r)
+
+	# Hands (fingerless gloves — dark with green tips)
+	var hand_l := ProceduralMesh.create_sphere(0.08, 6, Color("#1A1A2E"))
+	hand_l.position = Vector3(-0.36, 0.5, 0.0)
+	model.add_child(hand_l)
+	var hand_r := ProceduralMesh.create_sphere(0.08, 6, Color("#1A1A2E"))
+	hand_r.position = Vector3(0.36, 0.5, 0.0)
+	model.add_child(hand_r)
+	# Glowing fingertips
+	var tip_l := ProceduralMesh.create_sphere(0.03, 4, accent)
+	tip_l.position = Vector3(-0.36, 0.46, 0.06)
+	model.add_child(tip_l)
+	var tip_r := ProceduralMesh.create_sphere(0.03, 4, accent)
+	tip_r.position = Vector3(0.36, 0.46, 0.06)
+	model.add_child(tip_r)
+
+	# Keyboard in left hand (hacking prop)
+	var keyboard := ProceduralMesh.create_box(Vector3(0.15, 0.02, 0.08), Color("#0F172A"))
+	keyboard.position = Vector3(-0.38, 0.48, 0.1)
+	keyboard.rotation_degrees.z = 15.0
+	model.add_child(keyboard)
+	# Key lights on keyboard
+	var keys := ProceduralMesh.create_box(Vector3(0.12, 0.01, 0.05), accent.darkened(0.3))
+	keys.position = Vector3(-0.38, 0.49, 0.1)
+	keys.rotation_degrees.z = 15.0
+	model.add_child(keys)
+
+	# Neck
+	var neck := ProceduralMesh.create_cylinder(0.07, 0.08, 6, skin)
+	neck.position.y = 1.14
+	model.add_child(neck)
+
+	# Head
+	var head := ProceduralMesh.create_sphere(0.21, 8, skin)
+	head.position.y = 1.33
+	model.add_child(head)
+
+	# Hair (short, messy — dark with green-tinted tips)
+	var hair := ProceduralMesh.create_sphere(0.22, 8, Color("#1C1917"))
+	hair.position = Vector3(0.0, 1.4, -0.02)
+	model.add_child(hair)
+	# Green-tipped spikes
+	var spike1 := ProceduralMesh.create_cone(0.04, 0.1, 4, accent.darkened(0.3))
+	spike1.position = Vector3(-0.06, 1.52, 0.02)
+	spike1.rotation_degrees.z = 10.0
+	model.add_child(spike1)
+	var spike2 := ProceduralMesh.create_cone(0.04, 0.12, 4, accent.darkened(0.3))
+	spike2.position = Vector3(0.04, 1.54, -0.02)
+	spike2.rotation_degrees.z = -8.0
+	model.add_child(spike2)
+	var spike3 := ProceduralMesh.create_cone(0.035, 0.09, 4, accent.darkened(0.3))
+	spike3.position = Vector3(0.12, 1.5, 0.0)
+	spike3.rotation_degrees.z = -15.0
+	model.add_child(spike3)
+
+	# Terminal visor (signature — glowing green band)
+	var visor := ProceduralMesh.create_box(Vector3(0.32, 0.06, 0.04), accent)
+	visor.position = Vector3(0.0, 1.37, 0.19)
+	model.add_child(visor)
+	# Visor screen overlay (darker green scanline effect)
+	var visor_screen := ProceduralMesh.create_box(Vector3(0.28, 0.04, 0.01), Color("#022C22"))
+	visor_screen.position = Vector3(0.0, 1.37, 0.22)
+	model.add_child(visor_screen)
+
+	# Eyes behind visor (barely visible, glowing)
+	var eye_l := ProceduralMesh.create_sphere(0.03, 6, accent)
+	eye_l.position = Vector3(-0.08, 1.37, 0.2)
+	model.add_child(eye_l)
+	var eye_r := ProceduralMesh.create_sphere(0.03, 6, accent)
+	eye_r.position = Vector3(0.08, 1.37, 0.2)
+	model.add_child(eye_r)
+
+	# Mouth (smirk)
+	var mouth := ProceduralMesh.create_box(Vector3(0.08, 0.02, 0.02), Color("#4A3030"))
+	mouth.position = Vector3(0.02, 1.27, 0.2)
+	mouth.rotation_degrees.z = -8.0
+	model.add_child(mouth)
+
+	# Backpack (server/router on back)
+	var backpack := ProceduralMesh.create_box(Vector3(0.22, 0.28, 0.1), Color("#0F172A"))
+	backpack.position = Vector3(0.0, 0.88, -0.22)
+	model.add_child(backpack)
+	# LED lights on backpack (blinking indicators)
+	for i in range(4):
+		var led := ProceduralMesh.create_sphere(0.015, 4, accent if i % 2 == 0 else Color("#FF4444"))
+		led.position = Vector3(-0.06 + i * 0.04, 1.04, -0.28)
+		model.add_child(led)
+	# Ethernet cables dangling from backpack
+	var eth1 := ProceduralMesh.create_cylinder(0.012, 0.2, 4, Color("#2563EB"))
+	eth1.position = Vector3(-0.08, 0.68, -0.24)
+	eth1.rotation_degrees.z = 10.0
+	model.add_child(eth1)
+	var eth2 := ProceduralMesh.create_cylinder(0.012, 0.18, 4, accent)
+	eth2.position = Vector3(0.08, 0.7, -0.24)
+	eth2.rotation_degrees.z = -8.0
+	model.add_child(eth2)

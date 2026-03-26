@@ -104,8 +104,36 @@ class _MenuDraw extends Control:
 		# Bottom glow line
 		draw_rect(Rect2(s.x * 0.15, title_y + 55, s.x * 0.7, 2), glow_color)
 
+		# ═══════════ RANK / PROGRESSION BAR ═══════════
+		if Progression:
+			var rank_y: float = title_y + 80
+			var phase_color: Color = Progression.get_phase_color()
+			var phase_name: String = Progression.get_phase_name().to_upper()
+
+			# Rank badge
+			draw_string(font, Vector2(s.x / 2.0 - 140, rank_y), "RANK:", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(TEXT, 0.5))
+			draw_string(font, Vector2(s.x / 2.0 - 80, rank_y), phase_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, phase_color)
+
+			# SP / KT counters
+			draw_string(font, Vector2(s.x / 2.0 + 60, rank_y), "%d SP" % Progression.signal_points, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(ACCENT, 0.6))
+			draw_string(font, Vector2(s.x / 2.0 + 160, rank_y), "%d KT" % Progression.knowledge_tokens, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(WARN, 0.6))
+
+			# Mini progress bar
+			var bar_x: float = s.x / 2.0 - 140
+			var bar_w: float = 380.0
+			var bar_h: float = 6.0
+			var bar_y2: float = rank_y + 10
+			draw_rect(Rect2(bar_x, bar_y2, bar_w, bar_h), Color(0.1, 0.1, 0.15))
+			var progress: float = Progression.get_phase_progress()
+			draw_rect(Rect2(bar_x, bar_y2, bar_w * clampf(progress, 0.0, 1.0), bar_h), phase_color)
+
+			# Wins counter
+			draw_string(font, Vector2(s.x / 2.0 - 140, rank_y + 28), "W: %d  L: %d  Fights: %d" % [
+				Progression.total_wins, Progression.total_losses, Progression.total_fights
+			], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(TEXT, 0.3))
+
 		# ═══════════ MENU ITEMS ═══════════
-		var menu_start_y: float = s.y * 0.45
+		var menu_start_y: float = s.y * 0.50
 		var item_height: float = 60.0
 
 		for i in range(menu._menu_keys.size()):

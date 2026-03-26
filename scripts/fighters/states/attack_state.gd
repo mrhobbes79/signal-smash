@@ -55,7 +55,9 @@ func physics_update(delta: float) -> void:
 			transitioned.emit("fall")
 
 func _set_hitbox_active(active: bool) -> void:
-	var hitbox: Area3D = fighter.get_node_or_null("Hitbox")
+	var hitbox: Area3D = fighter.get_node_or_null("Model/Hitbox")
+	if not hitbox:
+		hitbox = fighter.get_node_or_null("Hitbox")
 	if hitbox:
 		hitbox.monitoring = active
 		# Visual feedback — make hitbox visible when active
