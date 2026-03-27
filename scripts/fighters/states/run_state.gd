@@ -29,6 +29,8 @@ func physics_update(delta: float) -> void:
 			transitioned.emit("attack")
 		elif fighter.is_device_button_pressed(JOY_BUTTON_Y):
 			fighter.activate_special()
+		elif fighter.is_device_button_pressed(JOY_BUTTON_DPAD_DOWN) and fighter.is_on_floor():
+			fighter.drop_through_timer = 0.3
 
 func handle_input(event: InputEvent) -> void:
 	if fighter and fighter.device_id >= 0:

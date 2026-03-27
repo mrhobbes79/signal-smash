@@ -13,7 +13,7 @@ const AIR_FRICTION: float = 0.95
 const MAX_FALL_SPEED: float = 25.0
 
 ## Combat constants
-const KNOCKBACK_BASE: float = 5.0
+const KNOCKBACK_BASE: float = 8.0
 const KNOCKBACK_GROWTH: float = 0.08
 const HITSTUN_BASE: float = 0.2
 
@@ -25,6 +25,7 @@ var damage_accumulated: float = 0.0  ## Smash-style: more damage = more knockbac
 var player_id: int = 0
 var facing_right: bool = true
 var can_double_jump: bool = true
+var drop_through_timer: float = 0.0
 var is_grounded: bool = false
 var is_invincible: bool = false
 var hitstun_timer: float = 0.0
@@ -89,6 +90,14 @@ func _physics_process(delta: float) -> void:
 		special_active_timer -= delta
 		if special_active_timer <= 0.0:
 			_deactivate_special()
+
+	# Drop-through platform logic
+	if drop_through_timer > 0.0:
+		drop_through_timer -= delta
+		# Disable collision with one-way platforms temporarily
+		set_collision_mask_value(1, false)
+	else:
+		set_collision_mask_value(1, true)
 
 	move_and_slide()
 
@@ -160,7 +169,7 @@ func apply_knockback(direction: Vector3, base_force: float) -> void:
 	var defense_factor: float = 1.0 - get_defense_reduction()
 	var force: float = base_force * knockback_multiplier * KNOCKBACK_BASE * defense_factor
 	velocity = direction.normalized() * force
-	velocity.y = max(velocity.y, force * 0.5)
+	velocity.y = max(velocity.y, maxf(force * 0.5, 3.0))
 	hitstun_timer = HITSTUN_BASE * knockback_multiplier * defense_factor
 
 ## Take damage — increases damage_accumulated (Smash-style) and reduces signal
@@ -215,6 +224,7 @@ func reset_fighter() -> void:
 	hitstun_timer = 0.0
 	is_invincible = false
 	can_double_jump = true
+	drop_through_timer = 0.0
 	special_cooldown = 0.0
 	special_active_timer = 0.0
 	special_shield_active = false

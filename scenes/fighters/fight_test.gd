@@ -26,7 +26,7 @@ const KOStateScript = preload("res://scripts/fighters/states/ko_state.gd")
 const SpectatorHUDScript = preload("res://scenes/ui/spectator_hud.gd")
 
 const ATTACK_DAMAGE: float = 8.0
-const ATTACK_KNOCKBACK: float = 3.0
+const ATTACK_KNOCKBACK: float = 8.0
 
 var _fighter1: CharacterBody3D
 var _fighter2: CharacterBody3D
@@ -36,6 +36,7 @@ var _spectator_hud: CanvasLayer
 var _spectator_mode: bool = false
 var _fight_over: bool = false
 var _fight_over_timer: float = 0.0
+var _attack_effects: Array = []  # Array of {pos, timer, type, color}
 
 # Round system (best of 3)
 var _round: int = 1
@@ -100,8 +101,8 @@ func _build_arena_monterrey() -> void:
 	edge.position.y = -0.55
 	add_child(edge)
 	# Secondary rooftop platforms
-	_add_solid_platform(Vector3(-5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
-	_add_solid_platform(Vector3(5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
+	_add_one_way_platform(Vector3(-5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
+	_add_one_way_platform(Vector3(5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
 	# Towers
 	_build_tower(Vector3(-6.0, 0.0, -3.0), 5.5, Color("#6B7280"), Color("#FCD34D"))
 	_build_tower(Vector3(6.0, 0.0, -3.0), 4.0, Color("#6B7280"), Color("#FCD34D"))
@@ -211,10 +212,10 @@ func _build_arena_cdmx() -> void:
 	# Base platform (narrow)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(12.0, 0.5, 7.0), Color("#64748B"))
 	# Stacked vertical platforms (tower structure)
-	_add_solid_platform(Vector3(-3.0, 2.0, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
-	_add_solid_platform(Vector3(3.0, 3.5, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
-	_add_solid_platform(Vector3(-1.0, 5.0, 0), Vector3(3.5, 0.3, 3.0), Color("#475569"))
-	_add_solid_platform(Vector3(4.0, 6.5, 0), Vector3(3.0, 0.3, 2.5), Color("#475569"))
+	_add_one_way_platform(Vector3(-3.0, 2.0, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
+	_add_one_way_platform(Vector3(3.0, 3.5, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
+	_add_one_way_platform(Vector3(-1.0, 5.0, 0), Vector3(3.5, 0.3, 3.0), Color("#475569"))
+	_add_one_way_platform(Vector3(4.0, 6.5, 0), Vector3(3.0, 0.3, 2.5), Color("#475569"))
 	# Main tower structure with cross-beams
 	_build_tower(Vector3(0.0, 0.0, -4.0), 10.0, Color("#334155"), Color("#3B82F6"))
 	_build_tower(Vector3(-5.0, 0.0, -3.0), 7.0, Color("#334155"), Color("#3B82F6"))
@@ -243,11 +244,11 @@ func _build_arena_cdmx() -> void:
 		var eq_led := ProceduralMesh.create_sphere(0.03, 4, Color("#22C55E"))
 		eq_led.position = Vector3(0.28, 3.3 + es_i * 2.5, -3.48)
 		add_child(eq_led)
-	# Smog layers with varying opacity
-	for i in range(5):
-		var opacity: float = 0.08 + i * 0.04
-		var fog := ProceduralMesh.create_platform(25.0, 18.0, 0.02, Color(0.55, 0.55, 0.6, opacity))
-		fog.position = Vector3(0, 0.5 + i * 2.5, -5.0 - i * 3.0)
+	# Smog layers (background only, behind play area)
+	for i in range(3):
+		var opacity: float = 0.04 + i * 0.03
+		var fog := ProceduralMesh.create_platform(20.0, 15.0, 0.02, Color(0.55, 0.55, 0.6, opacity))
+		fog.position = Vector3(0, 1.0 + i * 4.0, -12.0 - i * 5.0)
 		add_child(fog)
 	# Bellas Artes dome (more detailed)
 	var dome := ProceduralMesh.create_sphere(2.5, 8, Color("#D4A574"))
@@ -302,10 +303,10 @@ func _build_arena_rio() -> void:
 	# Main platform (narrower — tight quarters)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(14.0, 0.5, 6.0), Color("#16A34A"))
 	# Favela rooftop platforms (irregular heights)
-	_add_solid_platform(Vector3(-4.5, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#DC2626"))
-	_add_solid_platform(Vector3(4.5, 1.0, 0), Vector3(2.5, 0.3, 2.5), Color("#2563EB"))
-	_add_solid_platform(Vector3(-1.5, 2.8, 0), Vector3(2.5, 0.3, 2.5), Color("#FCD34D"))
-	_add_solid_platform(Vector3(2.0, 3.5, 0), Vector3(2.0, 0.3, 2.0), Color("#A855F7"))
+	_add_one_way_platform(Vector3(-4.5, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#DC2626"))
+	_add_one_way_platform(Vector3(4.5, 1.0, 0), Vector3(2.5, 0.3, 2.5), Color("#2563EB"))
+	_add_one_way_platform(Vector3(-1.5, 2.8, 0), Vector3(2.5, 0.3, 2.5), Color("#FCD34D"))
+	_add_one_way_platform(Vector3(2.0, 3.5, 0), Vector3(2.0, 0.3, 2.0), Color("#A855F7"))
 	# Colorful favela buildings (12 buildings at different heights and depths)
 	var colors_favela := [Color("#DC2626"), Color("#2563EB"), Color("#FCD34D"), Color("#16A34A"), Color("#A855F7"),
 		Color("#F97316"), Color("#EC4899"), Color("#06B6D4"), Color("#84CC16"), Color("#EF4444"), Color("#8B5CF6"), Color("#14B8A6")]
@@ -420,9 +421,9 @@ func _build_arena_dallas() -> void:
 	# Main platform (dark industrial floor)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#1E293B"))
 	# Server rack platforms
-	_add_solid_platform(Vector3(-5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
-	_add_solid_platform(Vector3(5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
-	_add_solid_platform(Vector3(0.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#0F172A"))
+	_add_one_way_platform(Vector3(-5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
+	_add_one_way_platform(Vector3(5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
+	_add_one_way_platform(Vector3(0.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#0F172A"))
 	# Server racks — 16 racks in two rows (left and right)
 	for side in [-1, 1]:
 		for i in range(8):
@@ -524,9 +525,9 @@ func _build_arena_bogota() -> void:
 	# Main platform (mossy stone)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(15.0, 0.5, 7.0), Color("#166534"))
 	# Tree platforms
-	_add_solid_platform(Vector3(-5.0, 2.5, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
-	_add_solid_platform(Vector3(5.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
-	_add_solid_platform(Vector3(0.0, 4.5, 0), Vector3(2.5, 0.3, 2.0), Color("#15803D"))
+	_add_one_way_platform(Vector3(-5.0, 2.5, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
+	_add_one_way_platform(Vector3(5.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
+	_add_one_way_platform(Vector3(0.0, 4.5, 0), Vector3(2.5, 0.3, 2.0), Color("#15803D"))
 	# Trees (8+ with varying sizes)
 	var tree_data := [
 		[Vector3(-7.0, 4.5, -3.0), 0.35, 9.0, 3.0],
@@ -637,8 +638,8 @@ func _build_arena_buenos_aires() -> void:
 	# Wide main platform (open pampa)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(20.0, 0.5, 10.0), Color("#78716C"))
 	# Distant elevated platforms (far apart for long-range combat)
-	_add_solid_platform(Vector3(-7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
-	_add_solid_platform(Vector3(7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
+	_add_one_way_platform(Vector3(-7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
+	_add_one_way_platform(Vector3(7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
 	# Multiple long-range towers with cables between them
 	_build_tower(Vector3(-8.0, 0.0, -4.0), 8.0, Color("#9CA3AF"), Color("#F59E0B"))
 	_build_tower(Vector3(8.0, 0.0, -4.0), 8.0, Color("#9CA3AF"), Color("#F59E0B"))
@@ -762,9 +763,9 @@ func _build_arena_miami() -> void:
 	# Beach platform (sand colored)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#FDE68A"))
 	# Hotel rooftop platform (elevated right)
-	_add_solid_platform(Vector3(5.0, 2.5, 0), Vector3(4.0, 0.3, 3.5), Color("#F472B6"))
+	_add_one_way_platform(Vector3(5.0, 2.5, 0), Vector3(4.0, 0.3, 3.5), Color("#F472B6"))
 	# Pool deck platform (left)
-	_add_solid_platform(Vector3(-5.0, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#38BDF8"))
+	_add_one_way_platform(Vector3(-5.0, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#38BDF8"))
 	# Hotel building backdrop (main)
 	var hotel := ProceduralMesh.create_box(Vector3(5.0, 8.0, 3.0), Color("#F9A8D4"))
 	hotel.position = Vector3(5.0, 4.0, -4.0)
@@ -893,10 +894,10 @@ func _build_arena_wispa() -> void:
 	# Main convention floor
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(18.0, 0.5, 9.0), Color("#1D4ED8"))
 	# Vendor booth platforms
-	_add_solid_platform(Vector3(-5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
-	_add_solid_platform(Vector3(5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
+	_add_one_way_platform(Vector3(-5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
+	_add_one_way_platform(Vector3(5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
 	# Stage platform (center elevated)
-	_add_solid_platform(Vector3(0, 3.0, 0), Vector3(5.0, 0.4, 3.5), Color("#3B82F6"))
+	_add_one_way_platform(Vector3(0, 3.0, 0), Vector3(5.0, 0.4, 3.5), Color("#3B82F6"))
 	# 8 vendor booth walls with different brand colors
 	var booth_colors := [Color("#1E40AF"), Color("#3B82F6"), Color("#7C3AED"), Color("#059669"),
 		Color("#DC2626"), Color("#F59E0B"), Color("#06B6D4"), Color("#EC4899")]
@@ -1163,6 +1164,30 @@ func _add_solid_platform(pos: Vector3, size: Vector3, color: Color) -> void:
 
 	add_child(body)
 
+## Creates a one-way platform — can jump through from below, press DOWN to drop through
+func _add_one_way_platform(pos: Vector3, size: Vector3, color: Color) -> void:
+	var body := StaticBody3D.new()
+	body.name = "OneWayPlatform"
+	body.position = pos
+	body.collision_layer = 1
+	body.collision_mask = 0
+	# Add to group so fighters can detect them
+	body.add_to_group("one_way_platforms")
+
+	# Visual mesh
+	var mesh := ProceduralMesh.create_platform(size.x, size.z, size.y, color)
+	body.add_child(mesh)
+
+	# Collision shape — thin, only at the TOP surface
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(size.x, 0.1, size.z)  # Very thin
+	col.shape = shape
+	col.position.y = size.y / 2.0  # At the top
+	body.add_child(col)
+
+	add_child(body)
+
 func _build_fighters() -> void:
 	var p1 := GameMgr.get_p1()
 	_fighter1 = _create_fighter(1, Vector3(-3.0, 1.0, 0.0), p1["color"], p1["secondary"], p1["accent"], p1["name"])
@@ -1300,14 +1325,14 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 
 	var hitbox_shape := CollisionShape3D.new()
 	var hit_s := BoxShape3D.new()
-	hit_s.size = Vector3(1.0, 0.6, 0.8)
+	hit_s.size = Vector3(1.4, 0.8, 1.4)
 	hitbox_shape.shape = hit_s
-	hitbox_shape.position = Vector3(0.6, 0.8, 0.0)
+	hitbox_shape.position = Vector3(0.0, 0.8, 0.0)
 	hitbox.add_child(hitbox_shape)
 
 	# Hitbox visual (red box, visible when active)
-	var hit_visual := ProceduralMesh.create_box(Vector3(1.0, 0.6, 0.8), Color(1, 0, 0, 0.4))
-	hit_visual.position = Vector3(0.6, 0.8, 0.0)
+	var hit_visual := ProceduralMesh.create_box(Vector3(1.4, 0.8, 1.4), Color(1, 0, 0, 0.4))
+	hit_visual.position = Vector3(0.0, 0.8, 0.0)
 	hit_visual.visible = false
 	hitbox.add_child(hit_visual)
 
@@ -1319,6 +1344,10 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 				var dmg: float = ATTACK_DAMAGE * fighter.get_damage_multiplier()
 				var kb: float = ATTACK_KNOCKBACK * fighter.get_damage_multiplier()
 				target.take_damage(dmg, fighter.global_position, kb)
+				# Visual attack effect
+				var hit_pos: Vector3 = (fighter.global_position + target.global_position) / 2.0
+				hit_pos.y += 0.8
+				_spawn_attack_effect(hit_pos, fighter)
 				# Charge attacker's combo meter
 				fighter.combo_meter = minf(fighter.combo_meter + fighter.COMBO_HIT_CHARGE, fighter.COMBO_MAX)
 				# Hit SFX
@@ -1558,6 +1587,7 @@ func _process(delta: float) -> void:
 	_update_camera()
 	_check_fight_end(delta)
 	_update_combo_meters()
+	_update_attack_effects(delta)
 	_update_weather(delta)
 
 func _update_combo_meters() -> void:
@@ -1568,6 +1598,82 @@ func _update_combo_meters() -> void:
 			if f.combo_timer <= 0:
 				f.combo_active = false
 				f.is_invincible = false
+
+func _spawn_attack_effect(pos: Vector3, attacker: CharacterBody3D) -> void:
+	# Slash arc mesh (temporary)
+	var slash := ProceduralMesh.create_box(Vector3(1.5, 0.08, 0.08), Color(1, 1, 1, 0.9))
+	slash.position = pos
+	slash.rotation_degrees.z = randf_range(-30, 30)
+	slash.rotation_degrees.y = randf_range(-20, 20)
+	add_child(slash)
+
+	# Impact sparks (4-6 small spheres flying outward)
+	var sparks: Array[MeshInstance3D] = []
+	for s in range(5):
+		var spark := ProceduralMesh.create_sphere(0.06, 4, Color(1, 0.9, 0.3))
+		spark.position = pos
+		add_child(spark)
+		sparks.append(spark)
+
+	# Flash on attacker model (white overlay)
+	var flash := ProceduralMesh.create_box(Vector3(0.6, 1.2, 0.4), Color(1, 1, 1, 0.6))
+	flash.position = attacker.global_position + Vector3(0, 0.6, 0)
+	add_child(flash)
+
+	_attack_effects.append({
+		"slash": slash,
+		"sparks": sparks,
+		"flash": flash,
+		"timer": 0.0,
+		"max_time": 0.3,
+		"spark_dirs": [],
+	})
+	# Generate random spark directions
+	var effect = _attack_effects[-1]
+	for s2 in range(sparks.size()):
+		effect["spark_dirs"].append(Vector3(
+			randf_range(-3, 3),
+			randf_range(1, 4),
+			randf_range(-2, 2)
+		))
+
+	# Camera micro-shake on hit
+	if _camera:
+		_camera.position.x += randf_range(-0.15, 0.15)
+		_camera.position.y += randf_range(-0.1, 0.1)
+
+func _update_attack_effects(delta: float) -> void:
+	var to_remove: Array[int] = []
+	for i in range(_attack_effects.size()):
+		var fx: Dictionary = _attack_effects[i]
+		fx["timer"] += delta
+		var progress: float = fx["timer"] / fx["max_time"]
+
+		if progress >= 1.0:
+			# Remove all meshes
+			if fx["slash"] and is_instance_valid(fx["slash"]):
+				fx["slash"].queue_free()
+			if fx["flash"] and is_instance_valid(fx["flash"]):
+				fx["flash"].queue_free()
+			for spark in fx["sparks"]:
+				if is_instance_valid(spark):
+					spark.queue_free()
+			to_remove.append(i)
+		else:
+			# Animate slash (scale up and fade)
+			if is_instance_valid(fx["slash"]):
+				fx["slash"].scale = Vector3(1.0 + progress * 2.0, 1.0 - progress * 0.5, 1.0)
+			# Animate flash (fade out)
+			if is_instance_valid(fx["flash"]):
+				fx["flash"].scale = Vector3(1.0 + progress, 1.0 + progress, 1.0 + progress) * (1.0 - progress)
+			# Animate sparks (fly outward)
+			for s in range(fx["sparks"].size()):
+				if is_instance_valid(fx["sparks"][s]):
+					fx["sparks"][s].position += fx["spark_dirs"][s] * delta
+					fx["sparks"][s].scale = Vector3.ONE * (1.0 - progress)
+
+	for i in range(to_remove.size() - 1, -1, -1):
+		_attack_effects.remove_at(to_remove[i])
 
 func _trigger_combo(attacker: CharacterBody3D, target: CharacterBody3D) -> void:
 	_combo_attacker = attacker
@@ -1881,6 +1987,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_Q:
 			_fighter1.activate_special()
 
+		# P1 drop through (S key)
+		if event.keycode == KEY_S and _fighter1.is_on_floor():
+			_fighter1.drop_through_timer = 0.3
+
 		# P1 FULL SIGNAL COMBO (E key)
 		if event.keycode == KEY_E and _combo_attacker == null:
 			if _fighter1.can_activate_combo():
@@ -1903,6 +2013,10 @@ func _handle_p2_input(event: InputEventKey) -> void:
 	var f2_sm = _fighter2.get_node_or_null("StateMachine")
 	if f2_sm == null:
 		return
+
+	# P2 drop through (Down arrow)
+	if event.pressed and event.keycode == KEY_DOWN and _fighter2.is_on_floor():
+		_fighter2.drop_through_timer = 0.3
 
 	# P2 jump (Right Shift)
 	if event.pressed and event.keycode == KEY_SHIFT:
@@ -2510,12 +2624,12 @@ func _build_arena_wispa_2026() -> void:
 	# Main convention floor (larger than standard WISPA)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(22.0, 0.5, 11.0), Color("#7C3AED"))
 	# Vendor booth platforms (more booths)
-	_add_solid_platform(Vector3(-7.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#5B21B6"))
-	_add_solid_platform(Vector3(7.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#5B21B6"))
-	_add_solid_platform(Vector3(-3.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#6D28D9"))
-	_add_solid_platform(Vector3(3.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#6D28D9"))
+	_add_one_way_platform(Vector3(-7.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#5B21B6"))
+	_add_one_way_platform(Vector3(7.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#5B21B6"))
+	_add_one_way_platform(Vector3(-3.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#6D28D9"))
+	_add_one_way_platform(Vector3(3.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#6D28D9"))
 	# Grand stage platform (center elevated, larger)
-	_add_solid_platform(Vector3(0, 3.5, 0), Vector3(7.0, 0.5, 4.0), Color("#FBBF24"))
+	_add_one_way_platform(Vector3(0, 3.5, 0), Vector3(7.0, 0.5, 4.0), Color("#FBBF24"))
 	# Vendor booth walls with brand colors
 	var booth_colors := [Color("#5B21B6"), Color("#7C3AED"), Color("#FBBF24"), Color("#059669"), Color("#1E40AF"), Color("#EC4899")]
 	for i in range(6):
@@ -2566,12 +2680,12 @@ func _build_arena_wispmx() -> void:
 	# Main floor (red base)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(20.0, 0.5, 10.0), Color("#DC2626"))
 	# Side platforms (green)
-	_add_solid_platform(Vector3(-6.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#16A34A"))
-	_add_solid_platform(Vector3(6.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#16A34A"))
+	_add_one_way_platform(Vector3(-6.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#16A34A"))
+	_add_one_way_platform(Vector3(6.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#16A34A"))
 	# Center white platform
-	_add_solid_platform(Vector3(0, 1.0, 0), Vector3(5.0, 0.3, 3.0), Color("#F5F5F4"))
+	_add_one_way_platform(Vector3(0, 1.0, 0), Vector3(5.0, 0.3, 3.0), Color("#F5F5F4"))
 	# Mariachi stage (elevated, right side)
-	_add_solid_platform(Vector3(7.0, 3.0, -2.0), Vector3(4.0, 0.4, 3.0), Color("#7F1D1D"))
+	_add_one_way_platform(Vector3(7.0, 3.0, -2.0), Vector3(4.0, 0.4, 3.0), Color("#7F1D1D"))
 	# Mariachi stage backdrop
 	var mariachi_bg := ProceduralMesh.create_box(Vector3(4.5, 3.0, 0.2), Color("#450A0A"))
 	mariachi_bg.position = Vector3(7.0, 4.5, -3.5)

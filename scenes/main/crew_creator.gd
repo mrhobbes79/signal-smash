@@ -50,46 +50,73 @@ func _process(delta: float) -> void:
 	_draw_node.queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
+	if not event is InputEventKey or not event.pressed:
+		return
+
+	# Text input mode — when typing company name, capture ALL letters first
+	if _active_field == 0:
 		match event.keycode:
+			KEY_UP, KEY_W:
+				_active_field = 2
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
+				return
+			KEY_DOWN, KEY_S:
+				_active_field = 1
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
+				return
+			KEY_BACKSPACE:
+				if _company_name.length() > 0:
+					_company_name = _company_name.substr(0, _company_name.length() - 1)
+				return
+			KEY_ENTER:
+				_save_crew()
+				return
 			KEY_ESCAPE:
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 				get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
-			KEY_ENTER:
-				_save_crew()
-			KEY_UP, KEY_W:
-				_active_field = (_active_field - 1 + 3) % 3
-				if AudioManager:
-					AudioManager.play_sfx("menu_move")
-			KEY_DOWN, KEY_S:
-				_active_field = (_active_field + 1) % 3
-				if AudioManager:
-					AudioManager.play_sfx("menu_move")
-			KEY_LEFT, KEY_A:
-				if _active_field == 1:
-					_color_index = (_color_index - 1 + GameMgr.CREW_COLORS.size()) % GameMgr.CREW_COLORS.size()
-					if AudioManager:
-						AudioManager.play_sfx("menu_move")
-				elif _active_field == 2:
-					_emblem_index = (_emblem_index - 1 + GameMgr.CREW_EMBLEMS.size()) % GameMgr.CREW_EMBLEMS.size()
-					if AudioManager:
-						AudioManager.play_sfx("menu_move")
-			KEY_RIGHT, KEY_D:
-				if _active_field == 1:
-					_color_index = (_color_index + 1) % GameMgr.CREW_COLORS.size()
-					if AudioManager:
-						AudioManager.play_sfx("menu_move")
-				elif _active_field == 2:
-					_emblem_index = (_emblem_index + 1) % GameMgr.CREW_EMBLEMS.size()
-					if AudioManager:
-						AudioManager.play_sfx("menu_move")
-			KEY_BACKSPACE:
-				if _active_field == 0 and _company_name.length() > 0:
-					_company_name = _company_name.substr(0, _company_name.length() - 1)
+				return
 			_:
-				if _active_field == 0:
-					_handle_text_input(event)
+				# ALL other keys go to text input (including A and D!)
+				_handle_text_input(event)
+				return
+
+	# Color/Emblem field navigation
+	match event.keycode:
+		KEY_LEFT, KEY_A:
+			if _active_field == 1:
+				_color_index = (_color_index - 1 + GameMgr.CREW_COLORS.size()) % GameMgr.CREW_COLORS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
+			elif _active_field == 2:
+				_emblem_index = (_emblem_index - 1 + GameMgr.CREW_EMBLEMS.size()) % GameMgr.CREW_EMBLEMS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
+		KEY_RIGHT, KEY_D:
+			if _active_field == 1:
+				_color_index = (_color_index + 1) % GameMgr.CREW_COLORS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
+			elif _active_field == 2:
+				_emblem_index = (_emblem_index + 1) % GameMgr.CREW_EMBLEMS.size()
+				if AudioManager:
+					AudioManager.play_sfx("menu_move")
+		KEY_UP, KEY_W:
+			_active_field = (_active_field - 1 + 3) % 3
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+		KEY_DOWN, KEY_S:
+			_active_field = (_active_field + 1) % 3
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+		KEY_ENTER:
+			_save_crew()
+		KEY_ESCAPE:
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+			get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
 
 func _handle_text_input(event: InputEventKey) -> void:
 	if _company_name.length() >= MAX_NAME_LEN:

@@ -25,6 +25,11 @@ var _time: float = 0.0
 var _draw_node: Control
 
 func _ready() -> void:
+	# Auto-redirect to tutorial on very first launch
+	if Progression and Progression.total_fights == 0 and Progression.signal_points == 0:
+		get_tree().change_scene_to_file("res://scenes/main/tutorial.tscn")
+		return
+
 	# Background color
 	var bg_rect := ColorRect.new()
 	bg_rect.color = BG
@@ -169,10 +174,10 @@ class _MenuDraw extends Control:
 			LocaleManager.t("SETTINGS_LANGUAGE") if LocaleManager else "Language"]
 		draw_string(font, Vector2(20, bottom_y + 30), nav_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.4))
 		var community_text: String = LocaleManager.t("MENU_COMMUNITY") if LocaleManager else "For WISPA, WISPMX & ABRINT Communities"
-		draw_string(font, Vector2(20, bottom_y + 55), community_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.4))
+		draw_string(font, Vector2(20, bottom_y + 62), community_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.4))
 		var lang_name: String = LocaleManager.get_language_name() if LocaleManager else "English"
 		draw_string(font, Vector2(s.x - 250, bottom_y + 30), "Rigel Open Labs", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(TEXT, 0.3))
-		draw_string(font, Vector2(s.x - 250, bottom_y + 55), "[%s] #SignalSmash v0.1" % lang_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.3))
+		draw_string(font, Vector2(s.x - 250, bottom_y + 48), "[%s] #SignalSmash v0.1" % lang_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(ACCENT, 0.3))
 
 		# ═══════════ DECORATIVE ═══════════
 		# Scanning line effect

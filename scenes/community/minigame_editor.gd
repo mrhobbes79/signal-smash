@@ -38,6 +38,7 @@ var _selected_file_index: int = 0
 var _status_msg: String = ""
 var _status_timer: float = 0.0
 var _minigame_name: String = "CUSTOM_01"
+var _show_help: bool = true
 
 func _ready() -> void:
 	# Initialize grid
@@ -83,6 +84,8 @@ func _unhandled_input(event: InputEvent) -> void:
 						AudioManager.play_sfx("menu_move")
 				else:
 					get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
+			KEY_H:
+				_show_help = not _show_help
 			_:
 				if _mode == 0:
 					_handle_edit_input(event)
@@ -368,6 +371,51 @@ class _EditorDraw extends Control:
 					var prefix: String = "▶ " if i == editor._selected_file_index else "  "
 					draw_string(font, Vector2(s.x / 2.0 - 100, fy), "%s%s" % [prefix, editor._saved_files[i]], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, col)
 			draw_string(font, Vector2(s.x / 2.0 - 100, s.y * 0.8), "↑↓ Select  |  ENTER Load  |  ESC Cancel", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(TEXT, 0.4))
+
+		# ═══════════ HELP OVERLAY ═══════════
+		if editor._show_help:
+			draw_rect(Rect2(0, 0, s.x, s.y), Color(0, 0, 0, 0.8))
+			var hx: float = s.x / 2.0 - 260
+			var hy: float = s.y * 0.12
+			var line_h: float = 24.0
+
+			draw_string(font, Vector2(hx, hy), "MINI-GAME EDITOR — HELP (H to toggle)", HORIZONTAL_ALIGNMENT_LEFT, -1, 28, ACCENT)
+			hy += line_h * 2
+
+			draw_string(font, Vector2(hx, hy), "CONTROLS:", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, WARN)
+			hy += line_h
+			var controls: Array[String] = [
+				"  Arrow Keys .... Move cursor",
+				"  ENTER ......... Place/remove obstacle",
+				"  1 ............ Set start position",
+				"  2 ............ Set end position",
+				"  3 ............ Place collectible item",
+				"  T ............ Cycle game type (Race/Collect/Survive)",
+				"  F5 ........... Save to file",
+				"  F6 ........... Load from file",
+				"  F7 ........... Play test",
+				"  C ............ Clear grid",
+				"  ESC .......... Return to menu",
+			]
+			for line in controls:
+				draw_string(font, Vector2(hx, hy), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.8))
+				hy += line_h - 4
+
+			hy += line_h
+			draw_string(font, Vector2(hx, hy), "TIPS:", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, WARN)
+			hy += line_h
+			var tips: Array[String] = [
+				"  Race: player must reach END from START",
+				"  Collect: gather all items before time runs out",
+				"  Survive: avoid obstacles for the duration",
+			]
+			for line in tips:
+				draw_string(font, Vector2(hx, hy), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(TEXT, 0.7))
+				hy += line_h - 4
+
+			hy += line_h
+			var blink: float = (sin(t * 3.0) + 1.0) / 2.0
+			draw_string(font, Vector2(hx, hy), "Press H to close this help screen", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(ACCENT, 0.5 + blink * 0.5))
 
 		# ═══════════ STATUS MESSAGE ═══════════
 		if editor._status_timer > 0.0:
