@@ -84,6 +84,8 @@ func _build_arena() -> void:
 		5: _build_arena_buenos_aires()
 		6: _build_arena_miami()
 		7: _build_arena_wispa()
+		8: _build_arena_wispa_2026()
+		9: _build_arena_wispmx()
 		_: _build_arena_monterrey()
 
 	# Ground visual (all arenas)
@@ -92,18 +94,115 @@ func _build_arena() -> void:
 	add_child(ground)
 
 func _build_arena_monterrey() -> void:
+	# Main rooftop platform
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(16.0, 0.5, 8.0), Color("#EA580C"))
 	var edge := ProceduralMesh.create_platform(16.2, 8.2, 0.1, Color("#9A3412"))
 	edge.position.y = -0.55
 	add_child(edge)
+	# Secondary rooftop platforms
 	_add_solid_platform(Vector3(-5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
 	_add_solid_platform(Vector3(5.0, 2.0, 0.0), Vector3(3.5, 0.3, 3.0), Color("#78350F"))
+	# Towers
 	_build_tower(Vector3(-6.0, 0.0, -3.0), 5.5, Color("#6B7280"), Color("#FCD34D"))
 	_build_tower(Vector3(6.0, 0.0, -3.0), 4.0, Color("#6B7280"), Color("#FCD34D"))
-	var cable := ProceduralMesh.create_cylinder(0.02, 12.5, 4, Color.BLACK)
-	cable.position = Vector3(0.0, 4.5, -3.0)
-	cable.rotation_degrees.z = 90.0
-	add_child(cable)
+	# Multiple cable runs between towers
+	for ci in range(3):
+		var cable := ProceduralMesh.create_cylinder(0.02, 12.5, 4, Color.BLACK)
+		cable.position = Vector3(0.0, 4.0 + ci * 0.5, -3.0 + ci * 0.3)
+		cable.rotation_degrees.z = 90.0
+		add_child(cable)
+	# Extra cable run diagonally
+	var diag_cable := ProceduralMesh.create_cylinder(0.02, 8.0, 4, Color.BLACK)
+	diag_cable.position = Vector3(-2.0, 3.5, -2.5)
+	diag_cable.rotation_degrees.z = 70.0
+	add_child(diag_cable)
+	# Tinaco water tanks on rooftops
+	for tx in [-5.5, 5.5]:
+		var tinaco := ProceduralMesh.create_cylinder(0.5, 1.0, 8, Color("#374151"))
+		tinaco.position = Vector3(tx, 2.8, 1.5)
+		add_child(tinaco)
+		# Tinaco lid
+		var lid := ProceduralMesh.create_cylinder(0.55, 0.08, 8, Color("#1F2937"))
+		lid.position = Vector3(tx, 3.35, 1.5)
+		add_child(lid)
+		# Tinaco legs
+		for lx in [-0.3, 0.3]:
+			var leg := ProceduralMesh.create_cylinder(0.04, 0.5, 4, Color("#6B7280"))
+			leg.position = Vector3(tx + lx, 2.05, 1.5)
+			add_child(leg)
+	# AC units on rooftop
+	for ac_pos in [Vector3(-3.0, 0.35, 2.5), Vector3(2.5, 0.35, 2.8), Vector3(6.5, 2.35, 1.0)]:
+		var ac_unit := ProceduralMesh.create_box(Vector3(0.8, 0.6, 0.6), Color("#9CA3AF"))
+		ac_unit.position = ac_pos
+		add_child(ac_unit)
+		# AC fan grill
+		var grill := ProceduralMesh.create_cylinder(0.2, 0.05, 6, Color("#4B5563"))
+		grill.position = ac_pos + Vector3(0, 0.32, 0)
+		add_child(grill)
+	# Clotheslines between sides
+	for cl_i in range(2):
+		var cl_line := ProceduralMesh.create_cylinder(0.01, 10.0, 4, Color("#D1D5DB"))
+		cl_line.position = Vector3(0.0, 3.0 + cl_i * 0.6, 1.5 + cl_i * 0.5)
+		cl_line.rotation_degrees.z = 90.0
+		add_child(cl_line)
+		# Clothes hanging (small colored boxes)
+		for cl_j in range(5):
+			var cloth := ProceduralMesh.create_box(Vector3(0.3, 0.4, 0.05), [Color("#DC2626"), Color("#2563EB"), Color("#FCD34D"), Color("#16A34A"), Color("#A855F7")][cl_j])
+			cloth.position = Vector3(-4.0 + cl_j * 2.0, 2.7 + cl_i * 0.6, 1.5 + cl_i * 0.5)
+			add_child(cloth)
+	# Stairwell access structure
+	var stairwell := ProceduralMesh.create_box(Vector3(1.2, 1.8, 1.2), Color("#78350F"))
+	stairwell.position = Vector3(-7.0, 0.9, 1.0)
+	add_child(stairwell)
+	var stair_door := ProceduralMesh.create_box(Vector3(0.5, 1.0, 0.05), Color("#4B5563"))
+	stair_door.position = Vector3(-7.0, 0.5, 0.38)
+	add_child(stair_door)
+	# Distant buildings in background at different heights
+	var bldg_data := [
+		[Vector3(-12.0, 2.5, -18.0), Vector3(3.0, 5.0, 3.0), Color("#4B5563")],
+		[Vector3(-8.0, 3.5, -20.0), Vector3(2.5, 7.0, 2.5), Color("#374151")],
+		[Vector3(-4.0, 2.0, -16.0), Vector3(2.0, 4.0, 2.0), Color("#6B7280")],
+		[Vector3(4.0, 4.0, -22.0), Vector3(3.0, 8.0, 3.0), Color("#374151")],
+		[Vector3(8.0, 2.0, -17.0), Vector3(2.5, 4.0, 2.5), Color("#4B5563")],
+		[Vector3(12.0, 3.0, -19.0), Vector3(2.0, 6.0, 2.0), Color("#6B7280")],
+		[Vector3(15.0, 1.5, -15.0), Vector3(3.0, 3.0, 2.0), Color("#4B5563")],
+	]
+	for bd in bldg_data:
+		var bldg := ProceduralMesh.create_box(bd[1], bd[2])
+		bldg.position = bd[0]
+		add_child(bldg)
+		# Windows on buildings
+		for wr in range(int(bd[1].y) - 1):
+			for wc in range(2):
+				var bw := ProceduralMesh.create_box(Vector3(0.3, 0.3, 0.05), Color("#FCD34D").darkened(0.3))
+				bw.position = bd[0] + Vector3(-0.5 + wc * 1.0, -bd[1].y / 2.0 + 1.0 + wr * 1.2, bd[1].z / 2.0 + 0.03)
+				add_child(bw)
+	# Street level below — cars and buses visible
+	for ci2 in range(5):
+		var car_color: Color = [Color("#DC2626"), Color("#2563EB"), Color("#FCD34D"), Color("#16A34A"), Color("#F97316")][ci2]
+		var car := ProceduralMesh.create_box(Vector3(1.0, 0.4, 0.5), car_color)
+		car.position = Vector3(-6.0 + ci2 * 3.0, -5.0, 5.0)
+		add_child(car)
+		# Car wheels
+		for wx in [-0.3, 0.3]:
+			var wheel := ProceduralMesh.create_cylinder(0.12, 0.08, 6, Color("#1F2937"))
+			wheel.position = Vector3(-6.0 + ci2 * 3.0 + wx, -5.2, 5.28)
+			wheel.rotation_degrees.x = 90.0
+			add_child(wheel)
+	# Bus
+	var bus := ProceduralMesh.create_box(Vector3(2.5, 0.8, 0.7), Color("#16A34A"))
+	bus.position = Vector3(2.0, -4.8, 6.5)
+	add_child(bus)
+	var bus_windows := ProceduralMesh.create_box(Vector3(2.0, 0.3, 0.05), Color("#38BDF8"))
+	bus_windows.position = Vector3(2.0, -4.5, 6.86)
+	add_child(bus_windows)
+	# Sunset gradient sky plane
+	var sky_colors := [Color("#FDE68A"), Color("#F97316"), Color("#DC2626"), Color("#7C3AED")]
+	for si in range(4):
+		var sky_band := ProceduralMesh.create_platform(60.0, 0.1, 5.0, sky_colors[si])
+		sky_band.position = Vector3(0, 5.0 + si * 5.0, -45.0)
+		sky_band.rotation_degrees.x = 90.0
+		add_child(sky_band)
 	_build_mountains()
 	_build_hazard()
 
@@ -116,21 +215,86 @@ func _build_arena_cdmx() -> void:
 	_add_solid_platform(Vector3(3.0, 3.5, 0), Vector3(4.0, 0.3, 3.0), Color("#475569"))
 	_add_solid_platform(Vector3(-1.0, 5.0, 0), Vector3(3.5, 0.3, 3.0), Color("#475569"))
 	_add_solid_platform(Vector3(4.0, 6.5, 0), Vector3(3.0, 0.3, 2.5), Color("#475569"))
-	# Tower structure backdrop
+	# Main tower structure with cross-beams
 	_build_tower(Vector3(0.0, 0.0, -4.0), 10.0, Color("#334155"), Color("#3B82F6"))
 	_build_tower(Vector3(-5.0, 0.0, -3.0), 7.0, Color("#334155"), Color("#3B82F6"))
-	# Smog effect — gray fog planes
-	for i in range(3):
-		var fog := ProceduralMesh.create_platform(20.0, 15.0, 0.02, Color(0.6, 0.6, 0.65, 0.15))
-		fog.position = Vector3(0, 1.0 + i * 3.0, -5.0 - i * 3.0)
+	# Tower cross-beams (diagonal bracing)
+	for cb_i in range(4):
+		var cb := ProceduralMesh.create_cylinder(0.03, 3.5, 4, Color("#475569"))
+		cb.position = Vector3(0.0, 2.0 + cb_i * 2.0, -4.0)
+		cb.rotation_degrees.z = 45.0 if cb_i % 2 == 0 else -45.0
+		add_child(cb)
+	# Guy-wires from tower top to ground
+	for gw_angle in [-35.0, 35.0]:
+		var gw := ProceduralMesh.create_cylinder(0.015, 8.0, 4, Color("#9CA3AF"))
+		gw.position = Vector3(gw_angle * 0.08, 5.0, -4.0)
+		gw.rotation_degrees.z = gw_angle
+		add_child(gw)
+	# Equipment shelves on tower
+	for es_i in range(3):
+		var shelf := ProceduralMesh.create_box(Vector3(1.2, 0.15, 0.6), Color("#6B7280"))
+		shelf.position = Vector3(0.0, 3.0 + es_i * 2.5, -3.7)
+		add_child(shelf)
+		# Equipment box on shelf
+		var eq_box := ProceduralMesh.create_box(Vector3(0.5, 0.4, 0.4), Color("#1E293B"))
+		eq_box.position = Vector3(0.0, 3.3 + es_i * 2.5, -3.7)
+		add_child(eq_box)
+		# Status LED on equipment
+		var eq_led := ProceduralMesh.create_sphere(0.03, 4, Color("#22C55E"))
+		eq_led.position = Vector3(0.28, 3.3 + es_i * 2.5, -3.48)
+		add_child(eq_led)
+	# Smog layers with varying opacity
+	for i in range(5):
+		var opacity: float = 0.08 + i * 0.04
+		var fog := ProceduralMesh.create_platform(25.0, 18.0, 0.02, Color(0.55, 0.55, 0.6, opacity))
+		fog.position = Vector3(0, 0.5 + i * 2.5, -5.0 - i * 3.0)
 		add_child(fog)
-	# Bellas Artes dome (backdrop)
+	# Bellas Artes dome (more detailed)
 	var dome := ProceduralMesh.create_sphere(2.5, 8, Color("#D4A574"))
-	dome.position = Vector3(8.0, 2.0, -20.0)
+	dome.position = Vector3(8.0, 4.5, -20.0)
 	add_child(dome)
-	var dome_base := ProceduralMesh.create_box(Vector3(5.0, 3.0, 4.0), Color("#E5E7EB"))
-	dome_base.position = Vector3(8.0, 0.5, -20.0)
+	# Dome ornament on top
+	var dome_orn := ProceduralMesh.create_sphere(0.4, 6, Color("#FCD34D"))
+	dome_orn.position = Vector3(8.0, 7.0, -20.0)
+	add_child(dome_orn)
+	# Bellas Artes building base
+	var dome_base := ProceduralMesh.create_box(Vector3(6.0, 4.0, 5.0), Color("#E5E7EB"))
+	dome_base.position = Vector3(8.0, 1.5, -20.0)
 	add_child(dome_base)
+	# Columns on facade
+	for col_i in range(5):
+		var column := ProceduralMesh.create_cylinder(0.15, 3.5, 6, Color("#D1D5DB"))
+		column.position = Vector3(5.8 + col_i * 1.1, 2.0, -17.5)
+		add_child(column)
+	# Front stairs
+	var stairs := ProceduralMesh.create_box(Vector3(6.5, 0.5, 1.5), Color("#D1D5DB"))
+	stairs.position = Vector3(8.0, -0.25, -16.5)
+	add_child(stairs)
+	var stairs2 := ProceduralMesh.create_box(Vector3(5.5, 0.3, 1.0), Color("#E5E7EB"))
+	stairs2.position = Vector3(8.0, 0.1, -15.8)
+	add_child(stairs2)
+	# Urban backdrop buildings at different heights
+	var cdmx_bldgs := [
+		[Vector3(-12.0, 4.0, -25.0), Vector3(3.0, 8.0, 3.0), Color("#374151")],
+		[Vector3(-8.0, 6.0, -28.0), Vector3(2.5, 12.0, 2.5), Color("#4B5563")],
+		[Vector3(-4.0, 3.0, -22.0), Vector3(2.0, 6.0, 2.0), Color("#6B7280")],
+		[Vector3(14.0, 5.0, -26.0), Vector3(3.0, 10.0, 3.0), Color("#374151")],
+		[Vector3(18.0, 3.5, -23.0), Vector3(2.5, 7.0, 2.5), Color("#4B5563")],
+		[Vector3(-15.0, 2.5, -20.0), Vector3(2.0, 5.0, 2.0), Color("#6B7280")],
+		[Vector3(10.0, 7.0, -30.0), Vector3(2.0, 14.0, 2.0), Color("#334155")],
+	]
+	for bd in cdmx_bldgs:
+		var bldg := ProceduralMesh.create_box(bd[1], bd[2])
+		bldg.position = bd[0]
+		add_child(bldg)
+	# Satellite dishes on rooftops
+	for sd_pos in [Vector3(-12.0, 8.3, -25.0), Vector3(14.0, 10.3, -26.0), Vector3(-4.0, 6.3, -22.0)]:
+		var dish := ProceduralMesh.create_sphere(0.5, 6, Color("#D1D5DB"))
+		dish.position = sd_pos
+		add_child(dish)
+		var dish_arm := ProceduralMesh.create_cylinder(0.03, 0.6, 4, Color("#6B7280"))
+		dish_arm.position = sd_pos + Vector3(0, -0.3, 0)
+		add_child(dish_arm)
 	_build_hazard()  # Rotating antenna
 
 func _build_arena_rio() -> void:
@@ -142,13 +306,52 @@ func _build_arena_rio() -> void:
 	_add_solid_platform(Vector3(4.5, 1.0, 0), Vector3(2.5, 0.3, 2.5), Color("#2563EB"))
 	_add_solid_platform(Vector3(-1.5, 2.8, 0), Vector3(2.5, 0.3, 2.5), Color("#FCD34D"))
 	_add_solid_platform(Vector3(2.0, 3.5, 0), Vector3(2.0, 0.3, 2.0), Color("#A855F7"))
-	# Colorful building walls (decoration)
-	var colors_favela := [Color("#DC2626"), Color("#2563EB"), Color("#FCD34D"), Color("#16A34A"), Color("#A855F7")]
-	for i in range(5):
-		var wall := ProceduralMesh.create_box(Vector3(2.5, 3.0 + i * 0.5, 1.0), colors_favela[i])
-		wall.position = Vector3(-6.0 + i * 3.0, 0.5, -3.0)
+	# Colorful favela buildings (12 buildings at different heights and depths)
+	var colors_favela := [Color("#DC2626"), Color("#2563EB"), Color("#FCD34D"), Color("#16A34A"), Color("#A855F7"),
+		Color("#F97316"), Color("#EC4899"), Color("#06B6D4"), Color("#84CC16"), Color("#EF4444"), Color("#8B5CF6"), Color("#14B8A6")]
+	var favela_data := [
+		[Vector3(-6.0, 0.5, -3.0), Vector3(2.5, 3.0, 1.0)],
+		[Vector3(-3.5, 0.8, -3.5), Vector3(2.2, 3.5, 1.0)],
+		[Vector3(-1.0, 0.3, -3.0), Vector3(2.0, 2.5, 1.0)],
+		[Vector3(1.5, 0.6, -3.3), Vector3(2.3, 3.2, 1.0)],
+		[Vector3(4.0, 0.4, -3.0), Vector3(2.0, 2.8, 1.0)],
+		[Vector3(6.5, 0.7, -3.5), Vector3(2.2, 3.4, 1.0)],
+		[Vector3(-5.0, 1.5, -5.0), Vector3(2.5, 4.0, 1.0)],
+		[Vector3(-2.0, 1.8, -5.5), Vector3(2.0, 4.5, 1.0)],
+		[Vector3(1.0, 1.2, -5.0), Vector3(2.2, 3.5, 1.0)],
+		[Vector3(3.5, 1.6, -5.3), Vector3(2.0, 4.2, 1.0)],
+		[Vector3(6.0, 1.0, -5.0), Vector3(2.5, 3.0, 1.0)],
+		[Vector3(-7.5, 0.3, -4.0), Vector3(1.8, 2.5, 1.0)],
+	]
+	for fi in range(favela_data.size()):
+		var fd = favela_data[fi]
+		var wall := ProceduralMesh.create_box(fd[1], colors_favela[fi])
+		wall.position = fd[0]
 		add_child(wall)
-	# Cristo Redentor backdrop
+		# Windows on favela buildings
+		for wr in range(int(fd[1].y) - 1):
+			var fw := ProceduralMesh.create_box(Vector3(0.3, 0.25, 0.05), Color("#1F2937"))
+			fw.position = fd[0] + Vector3(0.4, -fd[1].y / 2.0 + 0.8 + wr * 0.9, fd[1].z / 2.0 + 0.03)
+			add_child(fw)
+	# Clotheslines between buildings
+	for cl_i in range(4):
+		var cl := ProceduralMesh.create_cylinder(0.01, 5.0, 4, Color("#D1D5DB"))
+		cl.position = Vector3(-4.0 + cl_i * 3.0, 2.5 + cl_i * 0.3, -3.5)
+		cl.rotation_degrees.z = 90.0
+		add_child(cl)
+		# Hanging laundry
+		for lj in range(3):
+			var laundry_color: Color = colors_favela[(cl_i * 3 + lj) % colors_favela.size()]
+			var laundry := ProceduralMesh.create_box(Vector3(0.25, 0.35, 0.04), laundry_color)
+			laundry.position = Vector3(-5.0 + cl_i * 3.0 + lj * 1.5, 2.2 + cl_i * 0.3, -3.5)
+			add_child(laundry)
+	# Cable tangles (messy wires between buildings)
+	for ct_i in range(6):
+		var tangle := ProceduralMesh.create_cylinder(0.015, 4.0 + ct_i * 0.5, 4, Color.BLACK)
+		tangle.position = Vector3(-5.0 + ct_i * 2.2, 2.0 + ct_i * 0.2, -4.0)
+		tangle.rotation_degrees.z = 75.0 + ct_i * 8.0
+		add_child(tangle)
+	# Cristo Redentor backdrop (more detailed)
 	var cristo_body := ProceduralMesh.create_box(Vector3(0.8, 4.0, 0.6), Color("#E5E7EB"))
 	cristo_body.position = Vector3(0.0, 6.0, -25.0)
 	add_child(cristo_body)
@@ -158,10 +361,58 @@ func _build_arena_rio() -> void:
 	var cristo_head := ProceduralMesh.create_sphere(0.6, 6, Color("#E5E7EB"))
 	cristo_head.position = Vector3(0.0, 8.5, -25.0)
 	add_child(cristo_head)
+	# Cristo face features
+	var cristo_eyes_l := ProceduralMesh.create_sphere(0.08, 4, Color("#9CA3AF"))
+	cristo_eyes_l.position = Vector3(-0.15, 8.55, -24.6)
+	add_child(cristo_eyes_l)
+	var cristo_eyes_r := ProceduralMesh.create_sphere(0.08, 4, Color("#9CA3AF"))
+	cristo_eyes_r.position = Vector3(0.15, 8.55, -24.6)
+	add_child(cristo_eyes_r)
+	# Cristo hands (small boxes at arm ends)
+	var cristo_hand_l := ProceduralMesh.create_box(Vector3(0.3, 0.4, 0.3), Color("#E5E7EB"))
+	cristo_hand_l.position = Vector3(-2.7, 7.5, -25.0)
+	add_child(cristo_hand_l)
+	var cristo_hand_r := ProceduralMesh.create_box(Vector3(0.3, 0.4, 0.3), Color("#E5E7EB"))
+	cristo_hand_r.position = Vector3(2.7, 7.5, -25.0)
+	add_child(cristo_hand_r)
+	# Cristo pedestal
+	var pedestal := ProceduralMesh.create_box(Vector3(2.0, 1.5, 2.0), Color("#D1D5DB"))
+	pedestal.position = Vector3(0.0, 3.5, -25.0)
+	add_child(pedestal)
+	var pedestal_base := ProceduralMesh.create_box(Vector3(3.0, 0.5, 3.0), Color("#9CA3AF"))
+	pedestal_base.position = Vector3(0.0, 2.5, -25.0)
+	add_child(pedestal_base)
 	# Hill under Cristo
 	var hill := ProceduralMesh.create_cone(8.0, 6.0, 6, Color("#166534"))
 	hill.position = Vector3(0.0, 0.0, -25.0)
 	add_child(hill)
+	# Palm trees on hillside
+	for pt_pos in [Vector3(-3.0, 2.5, -22.0), Vector3(4.0, 2.0, -23.0), Vector3(-5.0, 1.5, -21.0), Vector3(6.0, 1.0, -22.0)]:
+		var pt_trunk := ProceduralMesh.create_cylinder(0.1, 3.0, 6, Color("#92400E"))
+		pt_trunk.position = pt_pos
+		pt_trunk.rotation_degrees.z = 8.0
+		add_child(pt_trunk)
+		var pt_fronds := ProceduralMesh.create_sphere(1.0, 6, Color("#22C55E"))
+		pt_fronds.position = pt_pos + Vector3(0.2, 2.0, 0)
+		add_child(pt_fronds)
+	# Bird silhouettes (small dark triangles in sky)
+	for bird_i in range(5):
+		var bird_l := ProceduralMesh.create_cylinder(0.02, 0.4, 4, Color("#1F2937"))
+		bird_l.position = Vector3(-3.0 + bird_i * 1.8, 10.0 + bird_i * 0.5, -18.0)
+		bird_l.rotation_degrees.z = 30.0
+		add_child(bird_l)
+		var bird_r := ProceduralMesh.create_cylinder(0.02, 0.4, 4, Color("#1F2937"))
+		bird_r.position = Vector3(-2.7 + bird_i * 1.8, 10.0 + bird_i * 0.5, -18.0)
+		bird_r.rotation_degrees.z = -30.0
+		add_child(bird_r)
+	# Ocean visible in distance
+	var ocean := ProceduralMesh.create_platform(50.0, 30.0, 0.1, Color("#0EA5E9"))
+	ocean.position = Vector3(0, -1.0, -40.0)
+	add_child(ocean)
+	# Ocean horizon foam line
+	var foam := ProceduralMesh.create_platform(50.0, 0.5, 0.05, Color("#BAE6FD"))
+	foam.position = Vector3(0, -0.9, -25.0)
+	add_child(foam)
 	_build_hazard()
 
 func _build_arena_dallas() -> void:
@@ -172,57 +423,213 @@ func _build_arena_dallas() -> void:
 	_add_solid_platform(Vector3(-5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
 	_add_solid_platform(Vector3(5.0, 1.5, 0), Vector3(2.5, 0.3, 3.0), Color("#0F172A"))
 	_add_solid_platform(Vector3(0.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#0F172A"))
-	# Server rack walls (visual, left and right)
+	# Server racks — 16 racks in two rows (left and right)
 	for side in [-1, 1]:
-		for i in range(4):
-			var rack := ProceduralMesh.create_box(Vector3(1.2, 3.0, 0.8), Color("#0F172A"))
-			rack.position = Vector3(side * (3.0 + i * 1.5), 1.5, -2.5)
+		for i in range(8):
+			var rack := ProceduralMesh.create_box(Vector3(0.9, 3.0, 0.7), Color("#0F172A"))
+			rack.position = Vector3(side * (2.0 + i * 1.1), 1.5, -2.8)
 			add_child(rack)
-			# LED lights on racks
-			for j in range(3):
-				var led := ProceduralMesh.create_sphere(0.04, 4, Color("#06B6D4"))
-				led.position = Vector3(side * (3.0 + i * 1.5) + 0.5, 0.8 + j * 0.8, -2.1)
+			# Rack face panel
+			var face := ProceduralMesh.create_box(Vector3(0.85, 2.8, 0.05), Color("#1E293B"))
+			face.position = Vector3(side * (2.0 + i * 1.1), 1.5, -2.43)
+			add_child(face)
+			# Blinking LED lights (multiple rows)
+			for j in range(5):
+				var led_color: Color = Color("#06B6D4") if (i + j) % 3 != 0 else Color("#22C55E")
+				if (i + j) % 7 == 0:
+					led_color = Color("#F59E0B")
+				var led := ProceduralMesh.create_sphere(0.03, 4, led_color)
+				led.position = Vector3(side * (2.0 + i * 1.1) + 0.3, 0.5 + j * 0.55, -2.42)
 				add_child(led)
+				var led2 := ProceduralMesh.create_sphere(0.03, 4, Color("#06B6D4") if (i + j) % 2 == 0 else Color("#EF4444"))
+				led2.position = Vector3(side * (2.0 + i * 1.1) + 0.15, 0.5 + j * 0.55, -2.42)
+				add_child(led2)
+	# Cable trays overhead
+	for ct_i in range(4):
+		var tray := ProceduralMesh.create_box(Vector3(16.0, 0.08, 0.4), Color("#6B7280"))
+		tray.position = Vector3(0, 5.5, -2.0 + ct_i * 1.5)
+		add_child(tray)
+		for cb_i in range(3):
+			var cable_color: Color = [Color("#2563EB"), Color("#F97316"), Color("#22C55E")][cb_i]
+			var cable := ProceduralMesh.create_cylinder(0.025, 15.5, 4, cable_color)
+			cable.position = Vector3(0, 5.55, -2.15 + ct_i * 1.5 + cb_i * 0.12)
+			cable.rotation_degrees.z = 90.0
+			add_child(cable)
 	# Ceiling structure
 	var ceiling := ProceduralMesh.create_platform(18.0, 10.0, 0.1, Color("#1E293B"))
 	ceiling.position.y = 6.0
 	add_child(ceiling)
+	# Ceiling fluorescent lights
+	for fl_i in range(6):
+		var fl := ProceduralMesh.create_box(Vector3(0.15, 0.05, 2.0), Color("#F8FAFC"))
+		fl.position = Vector3(-6.0 + fl_i * 2.5, 5.9, -1.0)
+		add_child(fl)
+	# Raised floor tiles
+	for ft_x in range(8):
+		for ft_z in range(4):
+			var tile := ProceduralMesh.create_box(Vector3(1.8, 0.04, 1.8), Color("#334155"))
+			tile.position = Vector3(-7.0 + ft_x * 2.0, 0.02, -3.0 + ft_z * 2.0)
+			add_child(tile)
+	# Fire suppression pipes (red, overhead)
+	for fp_i in range(2):
+		var pipe := ProceduralMesh.create_cylinder(0.05, 17.0, 6, Color("#DC2626"))
+		pipe.position = Vector3(0, 5.2, -1.0 + fp_i * 3.0)
+		pipe.rotation_degrees.z = 90.0
+		add_child(pipe)
+		for sp_i in range(6):
+			var sprinkler := ProceduralMesh.create_sphere(0.06, 4, Color("#DC2626"))
+			sprinkler.position = Vector3(-6.0 + sp_i * 2.5, 5.12, -1.0 + fp_i * 3.0)
+			add_child(sprinkler)
+	# Cooling vents with grates
+	for cv_i in range(3):
+		var vent := ProceduralMesh.create_box(Vector3(1.5, 0.8, 0.1), Color("#4B5563"))
+		vent.position = Vector3(-5.0 + cv_i * 5.0, 1.0, -3.3)
+		add_child(vent)
+		for gl_i in range(4):
+			var grate := ProceduralMesh.create_box(Vector3(1.3, 0.03, 0.05), Color("#1E293B"))
+			grate.position = Vector3(-5.0 + cv_i * 5.0, 0.7 + gl_i * 0.2, -3.24)
+			add_child(grate)
+	# UPS battery cabinets
+	for ups_i in range(3):
+		var ups := ProceduralMesh.create_box(Vector3(1.5, 2.0, 1.0), Color("#1F2937"))
+		ups.position = Vector3(-4.0 + ups_i * 4.0, 1.0, 3.0)
+		add_child(ups)
+		var ups_panel := ProceduralMesh.create_box(Vector3(0.6, 0.4, 0.05), Color("#0F172A"))
+		ups_panel.position = Vector3(-4.0 + ups_i * 4.0, 1.5, 2.47)
+		add_child(ups_panel)
+		var ups_led := ProceduralMesh.create_sphere(0.04, 4, Color("#22C55E"))
+		ups_led.position = Vector3(-4.0 + ups_i * 4.0 + 0.2, 1.6, 2.46)
+		add_child(ups_led)
+	# Monitoring screens on walls
+	for ms_i in range(4):
+		var screen := ProceduralMesh.create_box(Vector3(1.2, 0.8, 0.05), Color("#0F172A"))
+		screen.position = Vector3(-5.0 + ms_i * 3.5, 3.5, -3.3)
+		add_child(screen)
+		var screen_glow := ProceduralMesh.create_box(Vector3(1.0, 0.6, 0.02), Color("#06B6D4").darkened(0.5))
+		screen_glow.position = Vector3(-5.0 + ms_i * 3.5, 3.5, -3.26)
+		add_child(screen_glow)
+		for sg_i in range(3):
+			var graph := ProceduralMesh.create_box(Vector3(0.8, 0.02, 0.01), Color("#06B6D4"))
+			graph.position = Vector3(-5.0 + ms_i * 3.5, 3.25 + sg_i * 0.2, -3.24)
+			add_child(graph)
 	# Neon floor strips
-	for i in range(3):
-		var strip := ProceduralMesh.create_box(Vector3(16.0, 0.02, 0.1), Color("#06B6D4"))
-		strip.position = Vector3(0, 0.01, -2.0 + i * 2.0)
+	for i in range(5):
+		var strip := ProceduralMesh.create_box(Vector3(16.0, 0.02, 0.08), Color("#06B6D4"))
+		strip.position = Vector3(0, 0.01, -3.0 + i * 1.5)
 		add_child(strip)
 	_build_hazard()
 
 func _build_arena_bogota() -> void:
-	## Selva Bogotá — Jungle canopy with relay towers, foliage
+	## Selva Bogota — Jungle canopy with relay towers, foliage
 	# Main platform (mossy stone)
 	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(15.0, 0.5, 7.0), Color("#166534"))
 	# Tree platforms
 	_add_solid_platform(Vector3(-5.0, 2.5, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
 	_add_solid_platform(Vector3(5.0, 3.0, 0), Vector3(3.0, 0.3, 2.5), Color("#15803D"))
 	_add_solid_platform(Vector3(0.0, 4.5, 0), Vector3(2.5, 0.3, 2.0), Color("#15803D"))
-	# Tree trunks
-	for x in [-6.0, -2.0, 3.0, 7.0]:
-		var trunk := ProceduralMesh.create_cylinder(0.3, 8.0, 6, Color("#78350F"))
-		trunk.position = Vector3(x, 4.0, -3.0)
+	# Trees (8+ with varying sizes)
+	var tree_data := [
+		[Vector3(-7.0, 4.5, -3.0), 0.35, 9.0, 3.0],
+		[Vector3(-4.0, 3.5, -4.0), 0.25, 7.0, 2.0],
+		[Vector3(-2.0, 4.0, -3.0), 0.3, 8.0, 2.5],
+		[Vector3(0.5, 3.0, -5.0), 0.2, 6.0, 1.8],
+		[Vector3(3.0, 4.5, -3.0), 0.3, 9.0, 2.8],
+		[Vector3(5.5, 3.5, -4.5), 0.25, 7.0, 2.2],
+		[Vector3(7.5, 4.0, -3.5), 0.3, 8.0, 2.5],
+		[Vector3(-5.5, 3.0, -5.5), 0.2, 6.0, 1.8],
+		[Vector3(1.5, 5.0, -6.0), 0.35, 10.0, 3.0],
+	]
+	for td in tree_data:
+		var trunk := ProceduralMesh.create_cylinder(td[1], td[2], 6, Color("#78350F"))
+		trunk.position = td[0]
 		add_child(trunk)
-		# Canopy (big green sphere)
-		var canopy := ProceduralMesh.create_sphere(2.5, 6, Color("#166534"))
-		canopy.position = Vector3(x, 8.5, -3.0)
+		var canopy := ProceduralMesh.create_sphere(td[3], 6, Color("#166534"))
+		canopy.position = td[0] + Vector3(0, td[2] / 2.0 + td[3] * 0.6, 0)
 		add_child(canopy)
-	# Vines (hanging cylinders)
-	for i in range(5):
-		var vine := ProceduralMesh.create_cylinder(0.02, 3.0, 4, Color("#22C55E"))
-		vine.position = Vector3(-4.0 + i * 2.5, 6.0, -2.0)
+		# Secondary canopy layer (lighter green)
+		var canopy2 := ProceduralMesh.create_sphere(td[3] * 0.7, 6, Color("#22C55E"))
+		canopy2.position = td[0] + Vector3(td[3] * 0.3, td[2] / 2.0 + td[3] * 0.8, 0)
+		add_child(canopy2)
+	# Hanging vines (10+)
+	for vi in range(12):
+		var vine_len: float = 2.0 + fmod(vi * 1.7, 3.0)
+		var vine := ProceduralMesh.create_cylinder(0.02, vine_len, 4, Color("#22C55E"))
+		vine.position = Vector3(-6.0 + vi * 1.2, 6.5 + fmod(vi * 0.7, 1.5), -2.5 - fmod(vi * 0.5, 2.0))
 		add_child(vine)
-	# Mist layers
-	for i in range(2):
-		var mist := ProceduralMesh.create_platform(20.0, 12.0, 0.02, Color(0.8, 0.9, 0.8, 0.1))
-		mist.position = Vector3(0, 0.5 + i * 2.0, -4.0)
+		# Vine curl at bottom
+		var curl := ProceduralMesh.create_sphere(0.06, 4, Color("#16A34A"))
+		curl.position = vine.position + Vector3(0, -vine_len / 2.0, 0)
+		add_child(curl)
+	# Orchid flowers (small colored spheres on trees)
+	var orchid_colors := [Color("#EC4899"), Color("#A855F7"), Color("#F97316"), Color("#FCD34D"), Color("#DC2626"),
+		Color("#F472B6"), Color("#C084FC")]
+	for oi in range(7):
+		var orchid := ProceduralMesh.create_sphere(0.12, 4, orchid_colors[oi])
+		orchid.position = tree_data[oi][0] + Vector3(0.3, tree_data[oi][2] * 0.3, 0.2)
+		add_child(orchid)
+		# Second orchid cluster
+		var orchid2 := ProceduralMesh.create_sphere(0.08, 4, orchid_colors[(oi + 3) % orchid_colors.size()])
+		orchid2.position = tree_data[oi][0] + Vector3(-0.2, tree_data[oi][2] * 0.5, 0.15)
+		add_child(orchid2)
+	# Fallen logs as obstacles
+	var log1 := ProceduralMesh.create_cylinder(0.2, 3.0, 6, Color("#78350F").darkened(0.2))
+	log1.position = Vector3(-3.0, 0.2, 1.5)
+	log1.rotation_degrees.z = 90.0
+	add_child(log1)
+	var log2 := ProceduralMesh.create_cylinder(0.25, 2.5, 6, Color("#78350F").darkened(0.15))
+	log2.position = Vector3(4.0, 0.2, 2.0)
+	log2.rotation_degrees.z = 85.0
+	add_child(log2)
+	# Moss on logs
+	var moss1 := ProceduralMesh.create_sphere(0.3, 4, Color("#166534"))
+	moss1.position = Vector3(-3.0, 0.4, 1.5)
+	add_child(moss1)
+	# River/stream below (blue plane)
+	var river := ProceduralMesh.create_platform(20.0, 2.0, 0.05, Color("#0EA5E9").darkened(0.3))
+	river.position = Vector3(0, -3.0, 0)
+	add_child(river)
+	# River banks
+	var bank_l := ProceduralMesh.create_platform(20.0, 0.5, 0.08, Color("#78350F"))
+	bank_l.position = Vector3(0, -2.95, -1.1)
+	add_child(bank_l)
+	var bank_r := ProceduralMesh.create_platform(20.0, 0.5, 0.08, Color("#78350F"))
+	bank_r.position = Vector3(0, -2.95, 1.1)
+	add_child(bank_r)
+	# Mist layers (more layers)
+	for i in range(4):
+		var opacity: float = 0.06 + i * 0.03
+		var mist := ProceduralMesh.create_platform(22.0, 14.0, 0.02, Color(0.8, 0.9, 0.8, opacity))
+		mist.position = Vector3(0, 0.3 + i * 1.5, -4.0 - i * 1.0)
 		add_child(mist)
-	# Relay tower in background
+	# Relay tower with equipment boxes
 	_build_tower(Vector3(0.0, 0.0, -8.0), 12.0, Color("#6B7280"), Color("#A3E635"))
+	# Equipment boxes at tower base
+	for eq_i in range(3):
+		var eq_box := ProceduralMesh.create_box(Vector3(0.6, 0.5, 0.4), Color("#374151"))
+		eq_box.position = Vector3(-0.8 + eq_i * 0.8, 0.25, -8.0)
+		add_child(eq_box)
+		var eq_led := ProceduralMesh.create_sphere(0.03, 4, Color("#A3E635"))
+		eq_led.position = Vector3(-0.8 + eq_i * 0.8, 0.4, -7.78)
+		add_child(eq_led)
+	# Monkeys (small brown spheres on branches)
+	var monkey_positions := [
+		Vector3(-6.5, 7.0, -3.0), Vector3(3.5, 7.5, -3.0), Vector3(7.0, 6.5, -3.5),
+		Vector3(-1.5, 8.0, -3.0), Vector3(5.0, 6.0, -4.5),
+	]
+	for mp in monkey_positions:
+		# Monkey body
+		var m_body := ProceduralMesh.create_sphere(0.2, 4, Color("#92400E"))
+		m_body.position = mp
+		add_child(m_body)
+		# Monkey head
+		var m_head := ProceduralMesh.create_sphere(0.12, 4, Color("#A16207"))
+		m_head.position = mp + Vector3(0.1, 0.2, 0)
+		add_child(m_head)
+		# Monkey tail (small cylinder)
+		var m_tail := ProceduralMesh.create_cylinder(0.02, 0.4, 4, Color("#92400E"))
+		m_tail.position = mp + Vector3(-0.15, 0.0, 0)
+		m_tail.rotation_degrees.z = 45.0
+		add_child(m_tail)
 	_build_hazard()
 
 func _build_arena_buenos_aires() -> void:
@@ -232,26 +639,122 @@ func _build_arena_buenos_aires() -> void:
 	# Distant elevated platforms (far apart for long-range combat)
 	_add_solid_platform(Vector3(-7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
 	_add_solid_platform(Vector3(7.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#57534E"))
-	# Tall long-range towers
+	# Multiple long-range towers with cables between them
 	_build_tower(Vector3(-8.0, 0.0, -4.0), 8.0, Color("#9CA3AF"), Color("#F59E0B"))
 	_build_tower(Vector3(8.0, 0.0, -4.0), 8.0, Color("#9CA3AF"), Color("#F59E0B"))
-	# Cable between distant towers
-	var cable := ProceduralMesh.create_cylinder(0.02, 16.0, 4, Color.BLACK)
-	cable.position = Vector3(0.0, 7.5, -4.0)
-	cable.rotation_degrees.z = 90.0
-	add_child(cable)
-	# Golden grass (flat planes)
-	for i in range(8):
+	_build_tower(Vector3(0.0, 0.0, -6.0), 10.0, Color("#9CA3AF"), Color("#F59E0B"))
+	_build_tower(Vector3(-14.0, 0.0, -8.0), 6.0, Color("#9CA3AF"), Color("#F59E0B"))
+	_build_tower(Vector3(14.0, 0.0, -8.0), 6.0, Color("#9CA3AF"), Color("#F59E0B"))
+	# Cables between all towers
+	var cable_pairs := [
+		[Vector3(-8.0, 7.5, -4.0), Vector3(0.0, 9.5, -6.0)],
+		[Vector3(0.0, 9.5, -6.0), Vector3(8.0, 7.5, -4.0)],
+		[Vector3(-14.0, 5.5, -8.0), Vector3(-8.0, 7.5, -4.0)],
+		[Vector3(8.0, 7.5, -4.0), Vector3(14.0, 5.5, -8.0)],
+	]
+	for cp in cable_pairs:
+		var dist: float = cp[0].distance_to(cp[1])
+		var mid: Vector3 = (cp[0] + cp[1]) / 2.0
+		var cb := ProceduralMesh.create_cylinder(0.02, dist, 4, Color.BLACK)
+		cb.position = mid
+		var dir: Vector3 = (cp[1] - cp[0]).normalized()
+		cb.rotation_degrees.z = rad_to_deg(atan2(dir.y, dir.x)) + 90.0
+		add_child(cb)
+	# Golden grass (more patches)
+	for i in range(14):
 		var grass := ProceduralMesh.create_platform(3.0, 2.0, 0.05, Color("#FDE68A"))
-		grass.position = Vector3(-9.0 + i * 2.8, 0.03, 3.0 + randf() * 2.0)
+		grass.position = Vector3(-9.0 + i * 1.5, 0.03, 2.5 + fmod(i * 1.3, 3.0))
 		add_child(grass)
-	# Obelisco backdrop
+	# Darker grass patches for variation
+	for i in range(8):
+		var dg := ProceduralMesh.create_platform(2.5, 1.5, 0.04, Color("#D4A017"))
+		dg.position = Vector3(-8.0 + i * 2.5, 0.04, 4.0 + fmod(i * 0.9, 2.0))
+		add_child(dg)
+	# Fence posts with wire
+	for fp_i in range(10):
+		var post := ProceduralMesh.create_cylinder(0.04, 1.2, 4, Color("#78350F"))
+		post.position = Vector3(-9.0 + fp_i * 2.0, 0.6, 4.5)
+		add_child(post)
+	# Fence wire
+	for fw_i in range(2):
+		var wire := ProceduralMesh.create_cylinder(0.01, 18.0, 4, Color("#6B7280"))
+		wire.position = Vector3(0, 0.5 + fw_i * 0.4, 4.5)
+		wire.rotation_degrees.z = 90.0
+		add_child(wire)
+	# Windmill/molino in background
+	var molino_pole := ProceduralMesh.create_cylinder(0.1, 6.0, 6, Color("#6B7280"))
+	molino_pole.position = Vector3(-12.0, 3.0, -12.0)
+	add_child(molino_pole)
+	var molino_hub := ProceduralMesh.create_sphere(0.3, 6, Color("#9CA3AF"))
+	molino_hub.position = Vector3(-12.0, 6.2, -12.0)
+	add_child(molino_hub)
+	# Windmill blades (4 flat rectangles)
+	for bl_i in range(4):
+		var blade := ProceduralMesh.create_box(Vector3(0.2, 2.0, 0.05), Color("#D1D5DB"))
+		blade.position = Vector3(-12.0, 6.2, -12.0)
+		blade.rotation_degrees.z = bl_i * 45.0
+		add_child(blade)
+	# Windmill water tank
+	var wm_tank := ProceduralMesh.create_cylinder(0.8, 0.6, 8, Color("#374151"))
+	wm_tank.position = Vector3(-11.0, 0.3, -11.5)
+	add_child(wm_tank)
+	# Gaucho hut
+	var hut_walls := ProceduralMesh.create_box(Vector3(2.5, 1.8, 2.0), Color("#92400E"))
+	hut_walls.position = Vector3(12.0, 0.9, -10.0)
+	add_child(hut_walls)
+	var hut_roof := ProceduralMesh.create_cone(2.0, 1.2, 4, Color("#78350F"))
+	hut_roof.position = Vector3(12.0, 2.4, -10.0)
+	add_child(hut_roof)
+	var hut_door := ProceduralMesh.create_box(Vector3(0.6, 1.2, 0.05), Color("#78350F").darkened(0.3))
+	hut_door.position = Vector3(12.0, 0.6, -8.98)
+	add_child(hut_door)
+	# Hut window
+	var hut_win := ProceduralMesh.create_box(Vector3(0.4, 0.4, 0.05), Color("#FDE68A"))
+	hut_win.position = Vector3(12.8, 1.2, -8.98)
+	add_child(hut_win)
+	# Distant city skyline (Buenos Aires)
+	var skyline_data := [
+		[Vector3(-6.0, 3.0, -28.0), Vector3(2.0, 6.0, 1.5)],
+		[Vector3(-3.0, 4.0, -30.0), Vector3(1.5, 8.0, 1.5)],
+		[Vector3(-1.0, 2.5, -27.0), Vector3(2.0, 5.0, 1.5)],
+		[Vector3(2.0, 3.5, -29.0), Vector3(1.8, 7.0, 1.5)],
+		[Vector3(5.0, 2.0, -26.0), Vector3(2.5, 4.0, 1.5)],
+		[Vector3(7.0, 3.0, -28.0), Vector3(1.5, 6.0, 1.5)],
+	]
+	for sd in skyline_data:
+		var bldg := ProceduralMesh.create_box(sd[1], Color("#6B7280").darkened(0.3))
+		bldg.position = sd[0]
+		add_child(bldg)
+	# Obelisco (more detailed with base plaza)
 	var obelisco := ProceduralMesh.create_box(Vector3(0.8, 12.0, 0.8), Color("#E5E7EB"))
 	obelisco.position = Vector3(0.0, 6.0, -22.0)
 	add_child(obelisco)
 	var obelisco_tip := ProceduralMesh.create_cone(0.5, 1.5, 4, Color("#E5E7EB"))
 	obelisco_tip.position = Vector3(0.0, 12.5, -22.0)
 	add_child(obelisco_tip)
+	# Obelisco base plaza
+	var plaza := ProceduralMesh.create_platform(6.0, 6.0, 0.15, Color("#D1D5DB"))
+	plaza.position = Vector3(0.0, -0.1, -22.0)
+	add_child(plaza)
+	# Plaza inner ring
+	var plaza_inner := ProceduralMesh.create_platform(3.0, 3.0, 0.1, Color("#9CA3AF"))
+	plaza_inner.position = Vector3(0.0, 0.0, -22.0)
+	add_child(plaza_inner)
+	# Obelisco window slits
+	for ow_i in range(5):
+		var slit := ProceduralMesh.create_box(Vector3(0.1, 0.5, 0.05), Color("#9CA3AF"))
+		slit.position = Vector3(0.0, 2.0 + ow_i * 2.0, -21.58)
+		add_child(slit)
+	# Argentine flag color accents (celeste y blanco stripes on platform edge)
+	var flag_celeste := ProceduralMesh.create_box(Vector3(20.0, 0.08, 0.15), Color("#75AADB"))
+	flag_celeste.position = Vector3(0, 0.02, -5.0)
+	add_child(flag_celeste)
+	var flag_white := ProceduralMesh.create_box(Vector3(20.0, 0.08, 0.15), Color.WHITE)
+	flag_white.position = Vector3(0, 0.02, -4.8)
+	add_child(flag_white)
+	var flag_celeste2 := ProceduralMesh.create_box(Vector3(20.0, 0.08, 0.15), Color("#75AADB"))
+	flag_celeste2.position = Vector3(0, 0.02, -4.6)
+	add_child(flag_celeste2)
 	_build_hazard()
 
 func _build_arena_miami() -> void:
@@ -262,30 +765,127 @@ func _build_arena_miami() -> void:
 	_add_solid_platform(Vector3(5.0, 2.5, 0), Vector3(4.0, 0.3, 3.5), Color("#F472B6"))
 	# Pool deck platform (left)
 	_add_solid_platform(Vector3(-5.0, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#38BDF8"))
-	# Hotel building backdrop
+	# Hotel building backdrop (main)
 	var hotel := ProceduralMesh.create_box(Vector3(5.0, 8.0, 3.0), Color("#F9A8D4"))
 	hotel.position = Vector3(5.0, 4.0, -4.0)
 	add_child(hotel)
-	# Hotel windows
-	for row in range(4):
-		for col in range(3):
-			var win := ProceduralMesh.create_box(Vector3(0.6, 0.5, 0.1), Color("#38BDF8"))
-			win.position = Vector3(3.5 + col * 1.2, 2.0 + row * 1.5, -2.45)
+	# Hotel windows (more rows)
+	for row in range(5):
+		for col in range(4):
+			var win := ProceduralMesh.create_box(Vector3(0.5, 0.4, 0.1), Color("#38BDF8"))
+			win.position = Vector3(3.2 + col * 1.1, 1.5 + row * 1.4, -2.45)
 			add_child(win)
-	# Palm trees
-	for x in [-7.0, -3.0, 7.0]:
+	# Pool with blue water (on pool deck)
+	var pool := ProceduralMesh.create_box(Vector3(2.5, 0.15, 1.8), Color("#0EA5E9"))
+	pool.position = Vector3(-5.0, 1.7, 0.0)
+	add_child(pool)
+	# Pool edge
+	var pool_edge := ProceduralMesh.create_box(Vector3(2.8, 0.08, 2.1), Color("#E5E7EB"))
+	pool_edge.position = Vector3(-5.0, 1.62, 0.0)
+	add_child(pool_edge)
+	# Lounge chairs by pool
+	for lc_i in range(3):
+		var chair_base := ProceduralMesh.create_box(Vector3(0.4, 0.08, 0.8), Color("#F8FAFC"))
+		chair_base.position = Vector3(-6.5, 1.68, -0.8 + lc_i * 0.9)
+		add_child(chair_base)
+		var chair_back := ProceduralMesh.create_box(Vector3(0.4, 0.4, 0.08), Color("#F8FAFC"))
+		chair_back.position = Vector3(-6.5, 1.88, -0.4 + lc_i * 0.9)
+		chair_back.rotation_degrees.x = -30.0
+		add_child(chair_back)
+	# Bar counter
+	var bar := ProceduralMesh.create_box(Vector3(1.8, 0.8, 0.5), Color("#78350F"))
+	bar.position = Vector3(-3.5, 2.0, 1.2)
+	add_child(bar)
+	# Bar stools
+	for bs_i in range(3):
+		var stool := ProceduralMesh.create_cylinder(0.12, 0.5, 6, Color("#6B7280"))
+		stool.position = Vector3(-4.1 + bs_i * 0.6, 1.85, 1.6)
+		add_child(stool)
+		var seat := ProceduralMesh.create_cylinder(0.15, 0.05, 6, Color("#DC2626"))
+		seat.position = Vector3(-4.1 + bs_i * 0.6, 2.12, 1.6)
+		add_child(seat)
+	# Lifeguard tower
+	var lg_legs_l := ProceduralMesh.create_cylinder(0.06, 3.0, 4, Color("#FDE68A").darkened(0.2))
+	lg_legs_l.position = Vector3(8.0, 1.5, 1.0)
+	add_child(lg_legs_l)
+	var lg_legs_r := ProceduralMesh.create_cylinder(0.06, 3.0, 4, Color("#FDE68A").darkened(0.2))
+	lg_legs_r.position = Vector3(8.8, 1.5, 1.0)
+	add_child(lg_legs_r)
+	var lg_seat := ProceduralMesh.create_box(Vector3(1.2, 0.6, 0.8), Color("#F97316"))
+	lg_seat.position = Vector3(8.4, 3.2, 1.0)
+	add_child(lg_seat)
+	var lg_roof := ProceduralMesh.create_box(Vector3(1.5, 0.08, 1.0), Color("#F97316"))
+	lg_roof.position = Vector3(8.4, 3.8, 1.0)
+	add_child(lg_roof)
+	# Surfboards leaning on wall
+	for sb_i in range(3):
+		var sb_color: Color = [Color("#06B6D4"), Color("#F97316"), Color("#EC4899")][sb_i]
+		var surfboard := ProceduralMesh.create_box(Vector3(0.3, 2.0, 0.06), sb_color)
+		surfboard.position = Vector3(7.0 + sb_i * 0.5, 1.2, -2.4)
+		surfboard.rotation_degrees.z = -10.0 + sb_i * 5.0
+		add_child(surfboard)
+	# Neon signs (colored glowing boxes on hotel)
+	var neon_colors := [Color("#F472B6"), Color("#06B6D4"), Color("#A855F7"), Color("#22C55E")]
+	for ns_i in range(4):
+		var neon := ProceduralMesh.create_box(Vector3(0.8, 0.3, 0.08), neon_colors[ns_i])
+		neon.position = Vector3(3.5 + ns_i * 1.0, 7.5, -2.45)
+		add_child(neon)
+	# "MIAMI" neon sign
+	var miami_sign := ProceduralMesh.create_box(Vector3(3.0, 0.5, 0.08), Color("#F472B6"))
+	miami_sign.position = Vector3(5.0, 8.5, -2.45)
+	add_child(miami_sign)
+	# Palm trees (6+)
+	var palm_positions := [-8.0, -5.0, -2.0, 2.0, 7.5, 9.5]
+	for px in palm_positions:
 		var trunk := ProceduralMesh.create_cylinder(0.15, 4.0, 6, Color("#92400E"))
-		trunk.position = Vector3(x, 2.0, -1.5)
-		trunk.rotation_degrees.z = 5.0
+		trunk.position = Vector3(px, 2.0, -1.5)
+		trunk.rotation_degrees.z = 5.0 + fmod(px * 3.0, 8.0) - 4.0
 		add_child(trunk)
-		# Palm fronds (flattened green spheres)
 		var fronds := ProceduralMesh.create_sphere(1.2, 6, Color("#22C55E"))
-		fronds.position = Vector3(x, 4.5, -1.5)
+		fronds.position = Vector3(px + 0.2, 4.5, -1.5)
 		add_child(fronds)
+		# Coconuts
+		var coconut := ProceduralMesh.create_sphere(0.1, 4, Color("#92400E"))
+		coconut.position = Vector3(px + 0.3, 3.8, -1.3)
+		add_child(coconut)
 	# Ocean backdrop
-	var ocean := ProceduralMesh.create_platform(40.0, 30.0, 0.1, Color("#0EA5E9"))
-	ocean.position = Vector3(0, -0.5, -15.0)
+	var ocean := ProceduralMesh.create_platform(50.0, 35.0, 0.1, Color("#0EA5E9"))
+	ocean.position = Vector3(0, -0.5, -18.0)
 	add_child(ocean)
+	# Ocean wave lines
+	for wv_i in range(3):
+		var wave := ProceduralMesh.create_platform(50.0, 0.3, 0.05, Color("#BAE6FD"))
+		wave.position = Vector3(0, -0.4, -5.0 - wv_i * 4.0)
+		add_child(wave)
+	# Cruise ship in distance
+	var ship_hull := ProceduralMesh.create_box(Vector3(5.0, 1.2, 1.5), Color("#F8FAFC"))
+	ship_hull.position = Vector3(-15.0, 0.5, -30.0)
+	add_child(ship_hull)
+	var ship_upper := ProceduralMesh.create_box(Vector3(3.5, 0.8, 1.2), Color("#E5E7EB"))
+	ship_upper.position = Vector3(-15.0, 1.5, -30.0)
+	add_child(ship_upper)
+	var ship_funnel := ProceduralMesh.create_cylinder(0.2, 0.8, 6, Color("#DC2626"))
+	ship_funnel.position = Vector3(-14.0, 2.3, -30.0)
+	add_child(ship_funnel)
+	# Ship windows
+	for sw_i in range(6):
+		var sw := ProceduralMesh.create_sphere(0.06, 4, Color("#38BDF8"))
+		sw.position = Vector3(-16.5 + sw_i * 0.7, 0.5, -29.24)
+		add_child(sw)
+	# Jet ski on water
+	var jetski := ProceduralMesh.create_box(Vector3(0.6, 0.3, 0.3), Color("#F97316"))
+	jetski.position = Vector3(10.0, -0.2, -8.0)
+	add_child(jetski)
+	var jetski_seat := ProceduralMesh.create_box(Vector3(0.3, 0.2, 0.2), Color("#1F2937"))
+	jetski_seat.position = Vector3(10.1, 0.0, -8.0)
+	add_child(jetski_seat)
+	# Sunset gradient layers
+	var sunset_colors := [Color("#FDE68A"), Color("#FDBA74"), Color("#F97316"), Color("#DC2626"), Color("#7C3AED")]
+	for si in range(5):
+		var sky_band := ProceduralMesh.create_platform(60.0, 0.1, 4.0, sunset_colors[si])
+		sky_band.position = Vector3(0, 3.0 + si * 4.0, -48.0)
+		sky_band.rotation_degrees.x = 90.0
+		add_child(sky_band)
 	_build_hazard()
 
 func _build_arena_wispa() -> void:
@@ -297,20 +897,66 @@ func _build_arena_wispa() -> void:
 	_add_solid_platform(Vector3(5.5, 1.5, 0), Vector3(3.5, 0.3, 3.0), Color("#1E40AF"))
 	# Stage platform (center elevated)
 	_add_solid_platform(Vector3(0, 3.0, 0), Vector3(5.0, 0.4, 3.5), Color("#3B82F6"))
-	# Vendor booth walls with brand colors
-	var booth_colors := [Color("#1E40AF"), Color("#3B82F6"), Color("#7C3AED"), Color("#059669")]
-	for i in range(4):
-		var booth := ProceduralMesh.create_box(Vector3(2.0, 2.5, 0.5), booth_colors[i])
-		booth.position = Vector3(-5.0 + i * 3.5, 1.25, -3.0)
+	# 8 vendor booth walls with different brand colors
+	var booth_colors := [Color("#1E40AF"), Color("#3B82F6"), Color("#7C3AED"), Color("#059669"),
+		Color("#DC2626"), Color("#F59E0B"), Color("#06B6D4"), Color("#EC4899")]
+	var booth_names_colors := [Color("#F8FAFC"), Color("#FDE68A"), Color("#A5F3FC"), Color("#BBF7D0"),
+		Color("#FECDD3"), Color("#FDE68A"), Color("#E0F2FE"), Color("#FCE7F3")]
+	for i in range(8):
+		var bx: float = -7.0 + i * 2.2
+		var booth := ProceduralMesh.create_box(Vector3(1.8, 2.5, 0.5), booth_colors[i])
+		booth.position = Vector3(bx, 1.25, -3.5)
 		add_child(booth)
 		# Banner on top
-		var banner := ProceduralMesh.create_box(Vector3(2.2, 0.6, 0.1), Color.WHITE)
-		banner.position = Vector3(-5.0 + i * 3.5, 2.8, -3.0)
+		var banner := ProceduralMesh.create_box(Vector3(2.0, 0.5, 0.08), booth_names_colors[i])
+		banner.position = Vector3(bx, 2.75, -3.5)
 		add_child(banner)
-	# Big screen backdrop
+		# Table in front of booth
+		var table := ProceduralMesh.create_box(Vector3(1.5, 0.6, 0.6), Color("#E5E7EB"))
+		table.position = Vector3(bx, 0.3, -2.8)
+		add_child(table)
+		# Brochures/items on table (small colored boxes)
+		for bri in range(2):
+			var brochure := ProceduralMesh.create_box(Vector3(0.2, 0.08, 0.15), booth_colors[i].lightened(0.3))
+			brochure.position = Vector3(bx - 0.3 + bri * 0.5, 0.65, -2.8)
+			add_child(brochure)
+	# Registration desk (near entrance area)
+	var reg_desk := ProceduralMesh.create_box(Vector3(3.0, 1.0, 0.8), Color("#1E293B"))
+	reg_desk.position = Vector3(-7.0, 0.5, 3.5)
+	add_child(reg_desk)
+	# Registration sign
+	var reg_sign := ProceduralMesh.create_box(Vector3(2.5, 0.5, 0.05), Color("#3B82F6"))
+	reg_sign.position = Vector3(-7.0, 1.3, 3.1)
+	add_child(reg_sign)
+	# Badge printer (small box on desk)
+	var badge_printer := ProceduralMesh.create_box(Vector3(0.4, 0.25, 0.3), Color("#374151"))
+	badge_printer.position = Vector3(-7.5, 1.15, 3.5)
+	add_child(badge_printer)
+	# Printer status LED
+	var printer_led := ProceduralMesh.create_sphere(0.03, 4, Color("#22C55E"))
+	printer_led.position = Vector3(-7.5, 1.3, 3.34)
+	add_child(printer_led)
+	# Badge stack
+	var badges := ProceduralMesh.create_box(Vector3(0.3, 0.15, 0.2), Color("#F8FAFC"))
+	badges.position = Vector3(-6.5, 1.08, 3.5)
+	add_child(badges)
+	# Big projection screen backdrop
 	var screen := ProceduralMesh.create_box(Vector3(10.0, 5.0, 0.2), Color("#0F172A"))
 	screen.position = Vector3(0, 5.0, -5.0)
 	add_child(screen)
+	# Animated glow border on screen
+	var glow_top := ProceduralMesh.create_box(Vector3(10.2, 0.12, 0.1), Color("#06B6D4"))
+	glow_top.position = Vector3(0, 7.55, -4.88)
+	add_child(glow_top)
+	var glow_bot := ProceduralMesh.create_box(Vector3(10.2, 0.12, 0.1), Color("#06B6D4"))
+	glow_bot.position = Vector3(0, 2.45, -4.88)
+	add_child(glow_bot)
+	var glow_l := ProceduralMesh.create_box(Vector3(0.12, 5.2, 0.1), Color("#06B6D4"))
+	glow_l.position = Vector3(-5.05, 5.0, -4.88)
+	add_child(glow_l)
+	var glow_r := ProceduralMesh.create_box(Vector3(0.12, 5.2, 0.1), Color("#06B6D4"))
+	glow_r.position = Vector3(5.05, 5.0, -4.88)
+	add_child(glow_r)
 	# SIGNAL SMASH on screen (colored accent bars)
 	var bar1 := ProceduralMesh.create_box(Vector3(4.0, 0.3, 0.1), Color("#06B6D4"))
 	bar1.position = Vector3(-1.5, 6.5, -4.85)
@@ -318,11 +964,83 @@ func _build_arena_wispa() -> void:
 	var bar2 := ProceduralMesh.create_box(Vector3(3.5, 0.3, 0.1), Color("#F59E0B"))
 	bar2.position = Vector3(1.5, 6.0, -4.85)
 	add_child(bar2)
+	# Screen content lines
+	for scl_i in range(4):
+		var scl := ProceduralMesh.create_box(Vector3(3.0 + scl_i * 0.5, 0.15, 0.05), Color("#3B82F6"))
+		scl.position = Vector3(0, 4.0 + scl_i * 0.5, -4.88)
+		add_child(scl)
+	# Balloon decorations (colored spheres floating)
+	var balloon_colors := [Color("#DC2626"), Color("#3B82F6"), Color("#22C55E"), Color("#F59E0B"),
+		Color("#A855F7"), Color("#EC4899")]
+	for bi in range(6):
+		var balloon := ProceduralMesh.create_sphere(0.3, 6, balloon_colors[bi])
+		balloon.position = Vector3(-6.0 + bi * 2.8, 7.0 + fmod(bi * 0.7, 1.5), -1.0 + fmod(bi * 0.5, 2.0))
+		add_child(balloon)
+		# Balloon string
+		var bstr := ProceduralMesh.create_cylinder(0.01, 1.5, 4, Color("#D1D5DB"))
+		bstr.position = balloon.position + Vector3(0, -1.0, 0)
+		add_child(bstr)
+	# Floor markings (aisle lines)
+	for fm_i in range(3):
+		var fl_mark := ProceduralMesh.create_box(Vector3(0.1, 0.02, 9.0), Color("#F59E0B"))
+		fl_mark.position = Vector3(-4.0 + fm_i * 4.0, 0.02, 0)
+		add_child(fl_mark)
+	# Cross aisle marks
+	for fm_i in range(2):
+		var fl_cross := ProceduralMesh.create_box(Vector3(18.0, 0.02, 0.1), Color("#F59E0B"))
+		fl_cross.position = Vector3(0, 0.02, -2.0 + fm_i * 4.0)
+		add_child(fl_cross)
+	# Swag table (right side)
+	var swag_table := ProceduralMesh.create_box(Vector3(2.5, 0.7, 0.8), Color("#E5E7EB"))
+	swag_table.position = Vector3(7.5, 0.35, 3.0)
+	add_child(swag_table)
+	# Swag items (t-shirts, stickers — small colored boxes)
+	var swag_colors := [Color("#3B82F6"), Color("#DC2626"), Color("#22C55E"), Color("#F59E0B")]
+	for sw_i in range(4):
+		var swag := ProceduralMesh.create_box(Vector3(0.35, 0.15, 0.25), swag_colors[sw_i])
+		swag.position = Vector3(6.8 + sw_i * 0.5, 0.78, 3.0)
+		add_child(swag)
+	# Coffee station
+	var coffee_table := ProceduralMesh.create_box(Vector3(1.8, 0.7, 0.6), Color("#78350F"))
+	coffee_table.position = Vector3(7.5, 0.35, 1.0)
+	add_child(coffee_table)
+	# Coffee machine
+	var coffee_machine := ProceduralMesh.create_box(Vector3(0.4, 0.5, 0.3), Color("#1F2937"))
+	coffee_machine.position = Vector3(7.2, 0.95, 1.0)
+	add_child(coffee_machine)
+	# Coffee cups
+	for cc_i in range(3):
+		var cup := ProceduralMesh.create_cylinder(0.06, 0.12, 6, Color("#F8FAFC"))
+		cup.position = Vector3(7.6 + cc_i * 0.25, 0.78, 1.0)
+		add_child(cup)
+	# Networking lounge area (back right)
+	for ch_i in range(4):
+		var chair := ProceduralMesh.create_box(Vector3(0.5, 0.5, 0.5), Color("#6B7280"))
+		chair.position = Vector3(5.5 + (ch_i % 2) * 1.5, 0.25, 3.5 + int(ch_i / 2) * 1.2)
+		add_child(chair)
+		var cushion := ProceduralMesh.create_box(Vector3(0.45, 0.08, 0.45), Color("#3B82F6"))
+		cushion.position = Vector3(5.5 + (ch_i % 2) * 1.5, 0.54, 3.5 + int(ch_i / 2) * 1.2)
+		add_child(cushion)
+	# Small coffee table in lounge
+	var lounge_table := ProceduralMesh.create_cylinder(0.4, 0.4, 6, Color("#374151"))
+	lounge_table.position = Vector3(6.25, 0.2, 4.1)
+	add_child(lounge_table)
 	# Spotlights (colored spheres above)
-	for i in range(5):
-		var spot := ProceduralMesh.create_sphere(0.2, 6, Color("#FBBF24"))
-		spot.position = Vector3(-4.0 + i * 2.0, 8.0, -2.0)
+	for i in range(7):
+		var spot_color: Color = [Color("#FBBF24"), Color("#F472B6"), Color("#06B6D4"), Color("#FBBF24"),
+			Color("#A855F7"), Color("#22C55E"), Color("#FBBF24")][i]
+		var spot := ProceduralMesh.create_sphere(0.2, 6, spot_color)
+		spot.position = Vector3(-6.0 + i * 2.0, 8.0, -2.0)
 		add_child(spot)
+	# Convention ceiling
+	var conv_ceiling := ProceduralMesh.create_platform(20.0, 12.0, 0.1, Color("#1E293B"))
+	conv_ceiling.position.y = 9.0
+	add_child(conv_ceiling)
+	# Ceiling trusses
+	for tr_i in range(4):
+		var truss := ProceduralMesh.create_box(Vector3(20.0, 0.15, 0.15), Color("#6B7280"))
+		truss.position = Vector3(0, 8.5, -3.0 + tr_i * 2.5)
+		add_child(truss)
 	_build_hazard()
 
 func _build_tower(pos: Vector3, height: float, color: Color, accent: Color) -> void:
@@ -1786,3 +2504,126 @@ func _build_morxel_model(model: Node3D, primary: Color, secondary: Color, accent
 	eth2.position = Vector3(0.08, 0.7, -0.24)
 	eth2.rotation_degrees.z = -8.0
 	model.add_child(eth2)
+
+func _build_arena_wispa_2026() -> void:
+	## WISPA 2026 — Purple/Gold themed convention, larger stage, trophy display, year banner
+	# Main convention floor (larger than standard WISPA)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(22.0, 0.5, 11.0), Color("#7C3AED"))
+	# Vendor booth platforms (more booths)
+	_add_solid_platform(Vector3(-7.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#5B21B6"))
+	_add_solid_platform(Vector3(7.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#5B21B6"))
+	_add_solid_platform(Vector3(-3.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#6D28D9"))
+	_add_solid_platform(Vector3(3.0, 1.5, 0), Vector3(3.0, 0.3, 3.0), Color("#6D28D9"))
+	# Grand stage platform (center elevated, larger)
+	_add_solid_platform(Vector3(0, 3.5, 0), Vector3(7.0, 0.5, 4.0), Color("#FBBF24"))
+	# Vendor booth walls with brand colors
+	var booth_colors := [Color("#5B21B6"), Color("#7C3AED"), Color("#FBBF24"), Color("#059669"), Color("#1E40AF"), Color("#EC4899")]
+	for i in range(6):
+		var booth := ProceduralMesh.create_box(Vector3(2.0, 2.5, 0.5), booth_colors[i])
+		booth.position = Vector3(-7.5 + i * 3.0, 1.25, -4.0)
+		add_child(booth)
+		var banner := ProceduralMesh.create_box(Vector3(2.2, 0.6, 0.1), Color("#FBBF24"))
+		banner.position = Vector3(-7.5 + i * 3.0, 2.8, -4.0)
+		add_child(banner)
+	# Big screen backdrop
+	var screen := ProceduralMesh.create_box(Vector3(12.0, 6.0, 0.2), Color("#0F172A"))
+	screen.position = Vector3(0, 5.5, -6.0)
+	add_child(screen)
+	# Year banner "2026" — gold bars
+	var year_bar := ProceduralMesh.create_box(Vector3(6.0, 1.2, 0.1), Color("#FBBF24"))
+	year_bar.position = Vector3(0, 8.0, -5.85)
+	add_child(year_bar)
+	var year_bg := ProceduralMesh.create_box(Vector3(5.5, 0.8, 0.1), Color("#4C1D95"))
+	year_bg.position = Vector3(0, 8.0, -5.8)
+	add_child(year_bg)
+	# SIGNAL SMASH accent bars on screen
+	var bar1 := ProceduralMesh.create_box(Vector3(5.0, 0.3, 0.1), Color("#06B6D4"))
+	bar1.position = Vector3(-1.5, 7.0, -5.85)
+	add_child(bar1)
+	var bar2 := ProceduralMesh.create_box(Vector3(4.5, 0.3, 0.1), Color("#FBBF24"))
+	bar2.position = Vector3(1.5, 6.5, -5.85)
+	add_child(bar2)
+	# Trophy display (center-left)
+	var trophy_base := ProceduralMesh.create_box(Vector3(1.0, 0.8, 1.0), Color("#292524"))
+	trophy_base.position = Vector3(-9.0, 0.4, 2.0)
+	add_child(trophy_base)
+	var trophy_cup := ProceduralMesh.create_cone(0.3, 0.8, 6, Color("#FBBF24"))
+	trophy_cup.position = Vector3(-9.0, 1.2, 2.0)
+	add_child(trophy_cup)
+	var trophy_star := ProceduralMesh.create_sphere(0.15, 6, Color("#FBBF24"))
+	trophy_star.position = Vector3(-9.0, 1.8, 2.0)
+	add_child(trophy_star)
+	# Spotlights (purple/gold alternating)
+	for i in range(7):
+		var spot_color: Color = Color("#FBBF24") if i % 2 == 0 else Color("#7C3AED")
+		var spot := ProceduralMesh.create_sphere(0.25, 6, spot_color)
+		spot.position = Vector3(-6.0 + i * 2.0, 9.5, -2.0)
+		add_child(spot)
+	_build_hazard()
+
+func _build_arena_wispmx() -> void:
+	## WISPMX Monterrey — Mexican flag colors, papel picado, Cerro de la Silla, mariachi stage
+	# Main floor (red base)
+	_add_solid_platform(Vector3(0, -0.25, 0), Vector3(20.0, 0.5, 10.0), Color("#DC2626"))
+	# Side platforms (green)
+	_add_solid_platform(Vector3(-6.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#16A34A"))
+	_add_solid_platform(Vector3(6.0, 1.5, 0), Vector3(4.0, 0.3, 3.0), Color("#16A34A"))
+	# Center white platform
+	_add_solid_platform(Vector3(0, 1.0, 0), Vector3(5.0, 0.3, 3.0), Color("#F5F5F4"))
+	# Mariachi stage (elevated, right side)
+	_add_solid_platform(Vector3(7.0, 3.0, -2.0), Vector3(4.0, 0.4, 3.0), Color("#7F1D1D"))
+	# Mariachi stage backdrop
+	var mariachi_bg := ProceduralMesh.create_box(Vector3(4.5, 3.0, 0.2), Color("#450A0A"))
+	mariachi_bg.position = Vector3(7.0, 4.5, -3.5)
+	add_child(mariachi_bg)
+	# Papel picado decorations (colored triangles hanging on strings)
+	var picado_colors := [Color("#DC2626"), Color("#16A34A"), Color("#FBBF24"), Color("#EC4899"), Color("#7C3AED"), Color("#06B6D4"), Color("#F97316"), Color("#F5F5F4")]
+	for row in range(3):
+		var row_y: float = 6.0 + row * 1.5
+		var row_z: float = -1.0 - row * 2.0
+		# String line
+		var string_line := ProceduralMesh.create_cylinder(0.02, 18.0, 4, Color("#92400E"))
+		string_line.position = Vector3(0, row_y, row_z)
+		string_line.rotation_degrees.z = 90.0
+		add_child(string_line)
+		# Hanging triangle flags
+		for i in range(10):
+			var flag_color: Color = picado_colors[(i + row) % picado_colors.size()]
+			var flag := ProceduralMesh.create_cone(0.3, 0.5, 3, flag_color)
+			flag.position = Vector3(-8.0 + i * 1.8, row_y - 0.4, row_z)
+			flag.rotation_degrees.x = 180.0  # Point downward
+			add_child(flag)
+	# Cerro de la Silla (larger version)
+	var mountain_color := Color("#78350F").lightened(0.15)
+	var peak1 := ProceduralMesh.create_cone(7.0, 12.0, 4, mountain_color)
+	peak1.position = Vector3(-12.0, 0.0, -35.0)
+	add_child(peak1)
+	var peak2 := ProceduralMesh.create_cone(6.0, 14.0, 4, mountain_color.darkened(0.1))
+	peak2.position = Vector3(-4.0, 0.0, -38.0)
+	add_child(peak2)
+	var ridge := ProceduralMesh.create_cone(4.0, 8.0, 4, mountain_color.darkened(0.05))
+	ridge.position = Vector3(-8.0, 0.0, -32.0)
+	add_child(ridge)
+	# Monterrey cityscape (background buildings)
+	var city_colors := [Color("#374151"), Color("#4B5563"), Color("#1F2937"), Color("#6B7280")]
+	for i in range(8):
+		var bldg_h: float = randf_range(4.0, 10.0)
+		var bldg := ProceduralMesh.create_box(Vector3(2.0, bldg_h, 1.5), city_colors[i % city_colors.size()])
+		bldg.position = Vector3(-14.0 + i * 4.0, bldg_h / 2.0 - 0.5, -20.0)
+		add_child(bldg)
+	# Mexican flag colors accent bars
+	var flag_g := ProceduralMesh.create_box(Vector3(3.0, 0.4, 0.1), Color("#16A34A"))
+	flag_g.position = Vector3(-3.5, 5.0, -5.0)
+	add_child(flag_g)
+	var flag_w := ProceduralMesh.create_box(Vector3(3.0, 0.4, 0.1), Color("#F5F5F4"))
+	flag_w.position = Vector3(0.0, 5.0, -5.0)
+	add_child(flag_w)
+	var flag_r := ProceduralMesh.create_box(Vector3(3.0, 0.4, 0.1), Color("#DC2626"))
+	flag_r.position = Vector3(3.5, 5.0, -5.0)
+	add_child(flag_r)
+	# Spotlights
+	for i in range(5):
+		var spot := ProceduralMesh.create_sphere(0.2, 6, Color("#FBBF24"))
+		spot.position = Vector3(-4.0 + i * 2.0, 9.0, -2.0)
+		add_child(spot)
+	_build_hazard()

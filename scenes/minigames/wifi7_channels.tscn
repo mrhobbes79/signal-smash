@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/minigames/wifi7_channels.gd" id="1"]
+
+[node name="WiFi7Channels" type="Node3D"]
+script = ExtResource("1")

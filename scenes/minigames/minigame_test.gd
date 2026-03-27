@@ -13,6 +13,8 @@ const IPPuzzleScene = preload("res://scenes/minigames/ip_puzzle.tscn")
 const WeatherDodgeScene = preload("res://scenes/minigames/weather_dodge.tscn")
 const BandwidthAuctionScene = preload("res://scenes/minigames/bandwidth_auction.tscn")
 const TroubleshooterScene = preload("res://scenes/minigames/troubleshooter.tscn")
+const WiFi7ChannelsScene = preload("res://scenes/minigames/wifi7_channels.tscn")
+const CBRSDeployScene = preload("res://scenes/minigames/cbrs_deploy.tscn")
 const MiniGameBaseScript = preload("res://scripts/minigames/minigame_base.gd")
 
 var _scenes: Array = []
@@ -27,6 +29,7 @@ func _ready() -> void:
 		AntennaAlignScene, SpectrumSniperScene, CableRunScene,
 		TowerClimbScene, PingPongScene, FirewallFrenzyScene, IPPuzzleScene,
 		WeatherDodgeScene, BandwidthAuctionScene, TroubleshooterScene,
+		WiFi7ChannelsScene, CBRSDeployScene,
 	]
 	_build_camera()
 	_build_hud()
@@ -59,6 +62,7 @@ func _show_start_prompt() -> void:
 		"ANTENNA ALIGN-OFF", "SPECTRUM SNIPER", "CABLE RUN",
 		"TOWER CLIMB RACE", "PING PONG", "FIREWALL FRENZY", "IP PUZZLE",
 		"WEATHER DODGE", "BANDWIDTH AUCTION", "THE TROUBLESHOOTER",
+		"WIFI 7 CHANNEL MASTER", "CBRS DEPLOYMENT",
 	]
 	var descs: Array[String] = [
 		"Align your dish antenna to the target signal.",
@@ -71,6 +75,8 @@ func _show_start_prompt() -> void:
 		"Keep your signal link alive through rain, snow, and solar flares.",
 		"Bid on spectrum blocks. Build the best coverage plan.",
 		"Diagnose customer network problems from clues.",
+		"Manage 3 simultaneous WiFi 7 links. Balance traffic across bands!",
+		"Deploy CBRS small cells. Bid on spectrum, avoid incumbent radar!",
 	]
 	var idx: int = clampi(_current_scene_idx, 0, names.size() - 1)
 	_status_label.text = """SIGNAL SMASH — Mini-Game Test

@@ -32,6 +32,13 @@ const CHARACTER_DATA := [
 	},
 ]
 
+# Custom Company Crew
+var custom_crew_name: String = ""
+var custom_crew_color: Color = Color.WHITE
+var custom_crew_emblem: int = 0
+const CREW_COLORS := [Color("#EF4444"), Color("#F59E0B"), Color("#22C55E"), Color("#3B82F6"), Color("#8B5CF6"), Color("#EC4899"), Color("#06B6D4"), Color("#84CC16"), Color("#F97316"), Color("#6366F1"), Color("#14B8A6"), Color("#E11D48")]
+const CREW_EMBLEMS := ["circle", "square", "triangle", "star", "antenna", "signal", "router", "tower"]
+
 var current_state: GameState = GameState.MENU
 var player_count: int = 0
 
@@ -131,6 +138,26 @@ const ARENA_DATA := [
 		"sky_bot": Color("#3B82F6"),
 		"hazard": "crowd_projectiles",
 		"music": "wispa",
+	},
+	{
+		"name": "WISPA 2026",
+		"city": "WISPA Dallas",
+		"color": Color("#7C3AED"),
+		"accent": Color("#FBBF24"),
+		"sky_top": Color("#4C1D95"),
+		"sky_bot": Color("#7C3AED"),
+		"hazard": "rotating_antenna",
+		"music": "wispa",
+	},
+	{
+		"name": "WISPMX Monterrey",
+		"city": "WISPMX",
+		"color": Color("#DC2626"),
+		"accent": Color("#16A34A"),
+		"sky_top": Color("#991B1B"),
+		"sky_bot": Color("#DC2626"),
+		"hazard": "rotating_antenna",
+		"music": "monterrey",
 	},
 ]
 

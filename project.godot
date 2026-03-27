@@ -27,6 +27,7 @@ InputManager="*res://scripts/core/input_manager.gd"
 GameMgr="*res://scripts/core/game_manager.gd"
 Progression="*res://scripts/core/progression_manager.gd"
 Unlocks="*res://scripts/systems/unlockables.gd"
+CampaignData="*res://scripts/core/campaign_data.gd"
 
 [display]
 

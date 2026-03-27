@@ -90,6 +90,7 @@ var total_losses: int = 0
 var total_fights: int = 0
 var total_minigames: int = 0
 var best_minigame_scores: Dictionary = {}  ## { "minigame_name": float }
+var campaign_chapters_complete: Array[int] = []
 
 ## Fight result from last match (read by victory screen)
 var last_fight_result: Dictionary = {}
@@ -237,6 +238,7 @@ func save_game() -> void:
 		"fights": total_fights,
 		"minigames": total_minigames,
 		"best_scores": best_minigame_scores,
+		"campaign_complete": campaign_chapters_complete,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
@@ -264,3 +266,7 @@ func load_game() -> void:
 	total_fights = data.get("fights", 0)
 	total_minigames = data.get("minigames", 0)
 	best_minigame_scores = data.get("best_scores", {})
+	var loaded_campaign: Array = data.get("campaign_complete", [])
+	campaign_chapters_complete = []
+	for ch in loaded_campaign:
+		campaign_chapters_complete.append(int(ch))
