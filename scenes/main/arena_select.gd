@@ -135,10 +135,13 @@ class _ArenaDraw extends Control:
 			else:
 				draw_rect(Rect2(cx, cy, card_w, card_h), Color(0.3, 0.3, 0.4, 0.3), false, 1.0)
 
-			# Arena name
-			draw_string(font, Vector2(cx + 8, cy + card_h - 38), arena["name"], HORIZONTAL_ALIGNMENT_LEFT, int(card_w - 16), 16, Color.WHITE if is_sel else Color(TEXT, 0.6))
-			# City
-			draw_string(font, Vector2(cx + 8, cy + 20), arena["city"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(TEXT, 0.4))
+			# Arena name (large font with dark background for contrast)
+			var name_bg_y: float = cy + card_h - 48
+			draw_rect(Rect2(cx, name_bg_y, card_w, 32), Color(0, 0, 0, 0.7))
+			draw_string(font, Vector2(cx + 8, name_bg_y + 24), arena["name"], HORIZONTAL_ALIGNMENT_LEFT, int(card_w - 16), 22, Color.WHITE if is_sel else Color(TEXT, 0.8))
+			# City (top banner with dark background)
+			draw_rect(Rect2(cx, cy, card_w, 28), Color(0, 0, 0, 0.6))
+			draw_string(font, Vector2(cx + 8, cy + 22), arena["city"], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(TEXT, 0.7))
 
 		# Bottom bar
 		var bottom_y := s.y - 65

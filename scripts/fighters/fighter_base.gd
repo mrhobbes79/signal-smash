@@ -91,13 +91,12 @@ func _physics_process(delta: float) -> void:
 		if special_active_timer <= 0.0:
 			_deactivate_special()
 
-	# Drop-through platform logic
+	# Drop-through platform logic (Layer 9 = one-way platforms only, Layer 1 = ground stays solid)
 	if drop_through_timer > 0.0:
 		drop_through_timer -= delta
-		# Disable collision with one-way platforms temporarily
-		set_collision_mask_value(1, false)
+		set_collision_mask_value(9, false)  # Disable one-way platform collision
 	else:
-		set_collision_mask_value(1, true)
+		set_collision_mask_value(9, true)   # Re-enable one-way platform collision
 
 	move_and_slide()
 

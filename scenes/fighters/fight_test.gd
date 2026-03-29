@@ -1169,9 +1169,8 @@ func _add_one_way_platform(pos: Vector3, size: Vector3, color: Color) -> void:
 	var body := StaticBody3D.new()
 	body.name = "OneWayPlatform"
 	body.position = pos
-	body.collision_layer = 1
+	body.collision_layer = 1 << 8  # Layer 9 = One-way platforms (separate from Layer 1 ground)
 	body.collision_mask = 0
-	# Add to group so fighters can detect them
 	body.add_to_group("one_way_platforms")
 
 	# Visual mesh
@@ -1406,7 +1405,7 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 
 	# Set collision layer per player
 	fighter.collision_layer = 1 << id  # Layer 2 or 3
-	fighter.collision_mask = 1         # Scan layer 1 (world)
+	fighter.collision_mask = 1 | (1 << 8)  # Scan layer 1 (ground) + layer 9 (one-way platforms)
 
 	return fighter
 
