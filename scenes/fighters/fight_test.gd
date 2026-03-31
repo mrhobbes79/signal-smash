@@ -26,7 +26,7 @@ const KOStateScript = preload("res://scripts/fighters/states/ko_state.gd")
 const SpectatorHUDScript = preload("res://scenes/ui/spectator_hud.gd")
 
 const ATTACK_DAMAGE: float = 8.0
-const ATTACK_KNOCKBACK: float = 8.0
+const ATTACK_KNOCKBACK: float = 4.0
 
 var _fighter1: CharacterBody3D
 var _fighter2: CharacterBody3D
@@ -71,7 +71,7 @@ func _ready() -> void:
 var _hazard_antenna: Node3D
 var _hazard_area: Area3D
 const HAZARD_SPEED: float = 40.0  # Degrees per second
-const HAZARD_KNOCKBACK: float = 8.0
+const HAZARD_KNOCKBACK: float = 5.0
 const HAZARD_DAMAGE: float = 12.0
 
 func _build_arena() -> void:

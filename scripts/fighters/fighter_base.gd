@@ -13,8 +13,8 @@ const AIR_FRICTION: float = 0.95
 const MAX_FALL_SPEED: float = 25.0
 
 ## Combat constants
-const KNOCKBACK_BASE: float = 8.0
-const KNOCKBACK_GROWTH: float = 0.08
+const KNOCKBACK_BASE: float = 4.0
+const KNOCKBACK_GROWTH: float = 0.04
 const HITSTUN_BASE: float = 0.2
 
 ## Signal (health) — 100% = full health, 0% = KO
