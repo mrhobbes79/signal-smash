@@ -10,7 +10,7 @@ var loadout: Dictionary = { "radio": null, "antenna": null, "router": null }
 var owned_equipment: Array = []  ## All equipment player owns
 
 func equip(item: Resource) -> bool:
-	if item == null or not "type" in item:
+	if item == null or not item is Equipment:
 		return false
 	var slot: String = item.type
 	if slot not in loadout:

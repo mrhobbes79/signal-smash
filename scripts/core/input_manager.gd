@@ -42,6 +42,10 @@ func _on_joy_connection_changed(device_id: int, connected: bool) -> void:
 	_print_assignments()
 
 func _auto_assign(device_id: int) -> void:
+	# Skip if this device is already assigned to a slot
+	for slot in range(4):
+		if player_devices[slot] == device_id:
+			return
 	# Find first empty slot (or keyboard-only slot after P1)
 	for slot in range(4):
 		if player_devices[slot] == -1 and slot > 0:

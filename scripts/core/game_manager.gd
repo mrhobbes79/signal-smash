@@ -162,9 +162,13 @@ const ARENA_DATA := [
 ]
 
 func get_arena() -> Dictionary:
+	if selected_arena < 0 or selected_arena >= ARENA_DATA.size():
+		return ARENA_DATA[0]
 	return ARENA_DATA[selected_arena]
 
 func get_char_data(index: int) -> Dictionary:
+	if index < 0 or index >= CHARACTER_DATA.size():
+		return CHARACTER_DATA[0]
 	return CHARACTER_DATA[index]
 
 func get_p1() -> Dictionary:

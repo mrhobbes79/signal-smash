@@ -90,14 +90,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_A:
 				_p1_index = (_p1_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
-				if _is_locked(_p1_index):
+				var safety: int = 0
+				while _is_locked(_p1_index) and safety < CHARACTERS.size():
 					_p1_index = (_p1_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
+					safety += 1
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_D:
 				_p1_index = (_p1_index + 1) % CHARACTERS.size()
-				if _is_locked(_p1_index):
+				var safety: int = 0
+				while _is_locked(_p1_index) and safety < CHARACTERS.size():
 					_p1_index = (_p1_index + 1) % CHARACTERS.size()
+					safety += 1
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_SPACE:
@@ -110,14 +114,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_LEFT:
 				_p2_index = (_p2_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
-				if _is_locked(_p2_index):
+				var safety: int = 0
+				while _is_locked(_p2_index) and safety < CHARACTERS.size():
 					_p2_index = (_p2_index - 1 + CHARACTERS.size()) % CHARACTERS.size()
+					safety += 1
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_RIGHT:
 				_p2_index = (_p2_index + 1) % CHARACTERS.size()
-				if _is_locked(_p2_index):
+				var safety: int = 0
+				while _is_locked(_p2_index) and safety < CHARACTERS.size():
 					_p2_index = (_p2_index + 1) % CHARACTERS.size()
+					safety += 1
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 			KEY_SHIFT:
@@ -135,6 +143,17 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Both ready — store selections and go to loadout screen
 	if _p1_ready and _p2_ready:
+		if _p1_index == _p2_index:
+			# Same character selected — bump P2 to next available
+			_p2_index = (_p2_index + 1) % CHARACTERS.size()
+			var safety: int = 0
+			while (_is_locked(_p2_index) or _p2_index == _p1_index) and safety < CHARACTERS.size():
+				_p2_index = (_p2_index + 1) % CHARACTERS.size()
+				safety += 1
+			_p2_ready = false
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
+			return
 		if AudioManager:
 			AudioManager.play_sfx("menu_select")
 		GameMgr.p1_char_index = _p1_index

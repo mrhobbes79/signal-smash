@@ -27,6 +27,13 @@ func enter() -> void:
 	var lunge_dir: float = 1.0 if fighter.facing_right else -1.0
 	fighter.velocity.x += lunge_dir * ATTACK_LUNGE
 
+	# Reset per-target hit tracking
+	var hitbox: Area3D = fighter.get_node_or_null("Model/Hitbox")
+	if not hitbox:
+		hitbox = fighter.get_node_or_null("Hitbox")
+	if hitbox:
+		hitbox.set_meta("hit_targets", [])
+
 	# Enable hitbox
 	_set_hitbox_active(false)
 

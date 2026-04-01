@@ -23,18 +23,24 @@ func _ready() -> void:
 	print("[AUDIO] AudioManager initialized")
 
 func _setup_buses() -> void:
-	# Add SFX bus
-	AudioServer.add_bus()
-	_sfx_bus = AudioServer.bus_count - 1
-	AudioServer.set_bus_name(_sfx_bus, "SFX")
-	AudioServer.set_bus_send(_sfx_bus, "Master")
+	# Add SFX bus (only if it doesn't already exist)
+	if AudioServer.get_bus_index("SFX") == -1:
+		AudioServer.add_bus()
+		_sfx_bus = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(_sfx_bus, "SFX")
+		AudioServer.set_bus_send(_sfx_bus, "Master")
+	else:
+		_sfx_bus = AudioServer.get_bus_index("SFX")
 
-	# Add Music bus
-	AudioServer.add_bus()
-	_music_bus = AudioServer.bus_count - 1
-	AudioServer.set_bus_name(_music_bus, "Music")
-	AudioServer.set_bus_send(_music_bus, "Master")
-	AudioServer.set_bus_volume_db(_music_bus, -6.0)  # Music slightly quieter
+	# Add Music bus (only if it doesn't already exist)
+	if AudioServer.get_bus_index("Music") == -1:
+		AudioServer.add_bus()
+		_music_bus = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(_music_bus, "Music")
+		AudioServer.set_bus_send(_music_bus, "Master")
+		AudioServer.set_bus_volume_db(_music_bus, -6.0)  # Music slightly quieter
+	else:
+		_music_bus = AudioServer.get_bus_index("Music")
 
 func _setup_music_player() -> void:
 	_music_player = AudioStreamPlayer.new()
@@ -92,7 +98,10 @@ func play_sfx_3d(sfx_name: String, position: Vector3, volume_db: float = 0.0) ->
 	player.stream = _sfx_cache[sfx_name]
 	player.volume_db = volume_db
 	player.position = position
-	get_tree().current_scene.add_child(player)
+	if get_tree().current_scene:
+		get_tree().current_scene.add_child(player)
+	else:
+		add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)
 	return player

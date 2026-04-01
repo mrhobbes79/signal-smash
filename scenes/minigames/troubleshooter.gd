@@ -28,6 +28,14 @@ var _player_selection: Dictionary = {}   # { pid: int } — 0-3 (A/B/C/D)
 var _player_answered: Dictionary = {}    # { pid: bool }
 var _player_nav_cooldown: Dictionary = {} # { pid: float }
 
+var _p2_prev_keys := {}
+
+func _p2_just_pressed(key: int) -> bool:
+	var currently: bool = Input.is_key_pressed(key)
+	var was: bool = _p2_prev_keys.get(key, false)
+	_p2_prev_keys[key] = currently
+	return currently and not was
+
 # Feedback
 var _last_results: Dictionary = {}  # { pid: { correct: bool, points: float } }
 
@@ -216,18 +224,18 @@ func _process_inputs(delta: float) -> void:
 
 	# P2 (Arrows + L to confirm)
 	if 2 in _base.player_ids and not _player_answered.get(2, false):
-		if _player_nav_cooldown.get(2, 0.0) <= 0:
-			if Input.is_key_pressed(KEY_UP):
-				_player_selection[2] = maxi(_player_selection[2] - 1, 0)
-				_player_nav_cooldown[2] = NAV_COOLDOWN
-			elif Input.is_key_pressed(KEY_DOWN):
-				_player_selection[2] = mini(_player_selection[2] + 1, 3)
-				_player_nav_cooldown[2] = NAV_COOLDOWN
-		if Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_L):
-			if not _player_answered[2]:
-				_player_answered[2] = true
-				if AudioManager:
-					AudioManager.play_sfx("signal_lock")
+		if _p2_just_pressed(KEY_UP):
+			_player_selection[2] = maxi(_player_selection[2] - 1, 0)
+			if AudioManager:
+				AudioManager.play_sfx("align_beep")
+		elif _p2_just_pressed(KEY_DOWN):
+			_player_selection[2] = mini(_player_selection[2] + 1, 3)
+			if AudioManager:
+				AudioManager.play_sfx("align_beep")
+		if _p2_just_pressed(KEY_SHIFT) or _p2_just_pressed(KEY_L):
+			_player_answered[2] = true
+			if AudioManager:
+				AudioManager.play_sfx("signal_lock")
 
 # ═══════════ DRAWING via CanvasLayer ═══════════
 

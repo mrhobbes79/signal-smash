@@ -19,3 +19,11 @@ func physics_update(delta: float) -> void:
 	_timer += delta
 	fighter.velocity.x *= 0.9
 	fighter.velocity.z *= 0.9
+
+	# After respawn delay, transition back to idle and reset
+	if _timer >= RESPAWN_DELAY:
+		fighter.signal_percent = 100.0
+		fighter.damage_accumulated = 0.0
+		fighter.is_invincible = false
+		fighter.velocity = Vector3.ZERO
+		transitioned.emit("idle")

@@ -190,16 +190,24 @@ func _process_connector_select(pid: int) -> void:
 	elif Input.is_action_just_pressed("attack") or Input.is_action_just_pressed("jump"):
 		_confirm_connector(pid)
 
+var _p2_prev_keys := {}
+
+func _p2_just_pressed(key: int) -> bool:
+	var currently: bool = Input.is_key_pressed(key)
+	var was: bool = _p2_prev_keys.get(key, false)
+	_p2_prev_keys[key] = currently
+	return currently and not was
+
 func _process_connector_select_p2(pid: int) -> void:
-	if Input.is_key_pressed(KEY_LEFT) and Engine.get_physics_frames() % 15 == 0:
+	if _p2_just_pressed(KEY_LEFT):
 		_player_connector_idx[pid] = (_player_connector_idx[pid] - 1 + _connectors.size()) % _connectors.size()
 		if AudioManager:
 			AudioManager.play_sfx("menu_move")
-	elif Input.is_key_pressed(KEY_RIGHT) and Engine.get_physics_frames() % 15 == 0:
+	elif _p2_just_pressed(KEY_RIGHT):
 		_player_connector_idx[pid] = (_player_connector_idx[pid] + 1) % _connectors.size()
 		if AudioManager:
 			AudioManager.play_sfx("menu_move")
-	elif Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_L):
+	elif _p2_just_pressed(KEY_SHIFT) or _p2_just_pressed(KEY_L):
 		_confirm_connector(pid)
 
 func _confirm_connector(pid: int) -> void:

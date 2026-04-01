@@ -141,7 +141,8 @@ func _select_action() -> void:
 		Tab.TRAINING:
 			if AudioManager:
 				AudioManager.play_sfx("menu_select")
-			get_tree().change_scene_to_file("res://scenes/minigames/minigame_test.tscn")
+			var selected_mg: Dictionary = MINIGAMES[_minigame_index]
+			get_tree().change_scene_to_file(selected_mg["scene"])
 		Tab.WORKSHOP:
 			if AudioManager:
 				AudioManager.play_sfx("menu_select")

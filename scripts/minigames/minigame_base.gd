@@ -24,6 +24,16 @@ var _score_labels: Dictionary = {}  # { player_id: Label3D }
 var _title_label: Label3D
 var _instruction_label: Label3D
 
+## P2 key tracking for just-pressed detection
+var _p2_prev_keys: Dictionary = {}
+
+## Returns true only on rising edge (key was not pressed last frame, is pressed now)
+func _p2_just_pressed(keycode: int) -> bool:
+	var currently_pressed: bool = Input.is_key_pressed(keycode)
+	var was_pressed: bool = _p2_prev_keys.get(keycode, false)
+	_p2_prev_keys[keycode] = currently_pressed
+	return currently_pressed and not was_pressed
+
 ## Mini-game music index (0=Vivaldi/Antenna, 1=Bach/Spectrum, 2=Mozart/Cable)
 @export var music_index: int = 0
 
@@ -99,9 +109,9 @@ func _read_player_inputs() -> void:
 			_on_player_input(2, "horizontal", p2_x)
 		if absf(p2_y) > 0.1:
 			_on_player_input(2, "vertical", p2_y)
-		if Input.is_key_pressed(KEY_SHIFT):
+		if _p2_just_pressed(KEY_SHIFT):
 			_on_player_input(2, "confirm", 1.0)
-		if Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_L):
+		if _p2_just_pressed(KEY_CTRL) or _p2_just_pressed(KEY_L):
 			_on_player_input(2, "action", 1.0)
 
 func _finish() -> void:
@@ -113,29 +123,42 @@ func _finish() -> void:
 	if AudioManager:
 		AudioManager.stop_music()
 
-	# Determine winner
+	# Determine winner (handle ties)
 	var winner_id: int = -1
 	var best_score: float = -1.0
+	var is_tie: bool = false
 	for pid in scores:
 		if scores[pid] > best_score:
 			best_score = scores[pid]
 			winner_id = pid
+			is_tie = false
+		elif scores[pid] == best_score and winner_id != -1:
+			is_tie = true
+
+	if is_tie:
+		winner_id = -1  # No winner on tie
 
 	# Build results
 	var results: Dictionary = {}
 	for pid in scores:
+		var is_winner: bool = (pid == winner_id and winner_id > 0)
 		results[pid] = {
 			"score": scores[pid],
 			"buff_stat": buff_stat,
-			"buff_value": buff_value if pid == winner_id else buff_value / 2,
-			"is_winner": pid == winner_id,
+			"buff_value": buff_value if is_winner else int(buff_value / 2.0),
+			"is_winner": is_winner,
 		}
 
-	print("[MINI] %s complete! Winner: P%d (%.0f pts)" % [game_name, winner_id, best_score])
+	if is_tie:
+		print("[MINI] %s complete! TIE at %.0f pts" % [game_name, best_score])
+	else:
+		print("[MINI] %s complete! Winner: P%d (%.0f pts)" % [game_name, winner_id, best_score])
 	_on_finish(winner_id)
 
 	# Wait a moment then emit completion
 	await get_tree().create_timer(2.0).timeout
+	if not is_instance_valid(self):
+		return
 	game_completed.emit(results)
 
 ## Override in subclass for custom finish behavior

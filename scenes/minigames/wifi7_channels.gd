@@ -167,10 +167,15 @@ func _process_inputs(_delta: float) -> void:
 		else:
 			_p2_right_held = false
 		if Input.is_key_pressed(KEY_SHIFT):
-			_route_traffic(2)
+			if not _p2_shift_held:
+				_route_traffic(2)
+				_p2_shift_held = true
+		else:
+			_p2_shift_held = false
 
 var _p2_left_held: bool = false
 var _p2_right_held: bool = false
+var _p2_shift_held: bool = false
 
 func _route_traffic(pid: int) -> void:
 	if _pending_traffic[pid] <= 0.0:

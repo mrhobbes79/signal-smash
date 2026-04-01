@@ -130,6 +130,7 @@ Controls:
   Space       — Trigger attack animation
   K           — Trigger LINK DOWN alert
   R           — Reset camera
+  ESC         — Back to menu
 
 Current: %s | %s | %s""" % [
 		CHAR_NAMES[_current_character],
@@ -194,6 +195,9 @@ func _input(event: InputEvent) -> void:
 				_camera_rotation = Vector2(-25, 30)
 				_camera_distance = 12.0
 				_update_camera()
+			# Back to main menu
+			KEY_ESCAPE:
+				get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
 
 func _focus_character(index: int) -> void:
 	if index < _characters.size():

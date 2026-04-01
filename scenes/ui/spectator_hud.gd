@@ -89,16 +89,20 @@ func _check_commentary_triggers() -> void:
 	var p1_sig := _get_signal(fighter1)
 	var p2_sig := _get_signal(fighter2)
 
+	# Dynamic character names
+	var p1_name: String = GameMgr.get_p1().get("name", "P1")
+	var p2_name: String = GameMgr.get_p2().get("name", "P2")
+
 	# Big hit commentary + announcer hype
 	if p1_sig < _last_p1_signal - 10.0:
-		_add_commentary(_get_hit_commentary("RICO", _last_p1_signal - p1_sig))
+		_add_commentary(_get_hit_commentary(p1_name, _last_p1_signal - p1_sig))
 		var dmg1: float = _last_p1_signal - p1_sig
 		if dmg1 >= 20.0:
 			_trigger_announcer(_get_announcer_hype_line(), Color("#F59E0B"))
 			if AudioManager:
 				AudioManager.play_sfx("announce_hype")
 	if p2_sig < _last_p2_signal - 10.0:
-		_add_commentary(_get_hit_commentary("VERO", _last_p2_signal - p2_sig))
+		_add_commentary(_get_hit_commentary(p2_name, _last_p2_signal - p2_sig))
 		var dmg2: float = _last_p2_signal - p2_sig
 		if dmg2 >= 20.0:
 			_trigger_announcer(_get_announcer_hype_line(), Color("#F59E0B"))
@@ -107,23 +111,23 @@ func _check_commentary_triggers() -> void:
 
 	# Low signal warning
 	if p1_sig <= 25.0 and _last_p1_signal > 25.0:
-		_add_commentary("⚠ RICO's signal CRITICAL — one more hit and it's LINK DOWN!")
+		_add_commentary("⚠ %s's signal CRITICAL — one more hit and it's LINK DOWN!" % p1_name)
 		_trigger_hype("SIGNAL CRITICAL!")
 	if p2_sig <= 25.0 and _last_p2_signal > 25.0:
-		_add_commentary("⚠ VERO's signal CRITICAL — interference overload!")
+		_add_commentary("⚠ %s's signal CRITICAL — interference overload!" % p2_name)
 		_trigger_hype("SIGNAL CRITICAL!")
 
 	# KO commentary + announcer KO
 	if p1_sig <= 0.0 and _last_p1_signal > 0.0:
-		_add_commentary("🔴 RICO LINK DOWN! Complete signal loss! VERO takes the round!")
+		_add_commentary("🔴 %s LINK DOWN! Complete signal loss! %s takes the round!" % [p1_name, p2_name])
 		_trigger_hype("LINK DOWN!")
-		_trigger_announcer(_get_announcer_ko_line("RICO"), Color("#EF4444"))
+		_trigger_announcer(_get_announcer_ko_line(p1_name), Color("#EF4444"))
 		if AudioManager:
 			AudioManager.play_sfx("announce_ko")
 	if p2_sig <= 0.0 and _last_p2_signal > 0.0:
-		_add_commentary("🔴 VERO LINK DOWN! Total disconnection! RICO dominates!")
+		_add_commentary("🔴 %s LINK DOWN! Total disconnection! %s dominates!" % [p2_name, p1_name])
 		_trigger_hype("LINK DOWN!")
-		_trigger_announcer(_get_announcer_ko_line("VERO"), Color("#EF4444"))
+		_trigger_announcer(_get_announcer_ko_line(p2_name), Color("#EF4444"))
 		if AudioManager:
 			AudioManager.play_sfx("announce_ko")
 
@@ -249,8 +253,10 @@ class _SpectatorDraw extends Control:
 		draw_string(font, Vector2(s.x - 300, 42), "UPTIME: %s" % hud.format_uptime(hud._uptime), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TEXT)
 
 		# ═══════════ PLAYER PANELS ═══════════
-		_draw_player_panel(Vector2(20, 75), "RICO", "P1", p1_sig, hud._get_damage(f1), hud._get_state(f1), P1_COLOR, s.x / 2.0 - 40)
-		_draw_player_panel(Vector2(s.x / 2.0 + 20, 75), "VERO", "P2", p2_sig, hud._get_damage(f2), hud._get_state(f2), P2_COLOR, s.x / 2.0 - 40)
+		var p1_name: String = GameMgr.get_p1().get("name", "P1")
+		var p2_name: String = GameMgr.get_p2().get("name", "P2")
+		_draw_player_panel(Vector2(20, 75), p1_name, "P1", p1_sig, hud._get_damage(f1), hud._get_state(f1), P1_COLOR, s.x / 2.0 - 40)
+		_draw_player_panel(Vector2(s.x / 2.0 + 20, 75), p2_name, "P2", p2_sig, hud._get_damage(f2), hud._get_state(f2), P2_COLOR, s.x / 2.0 - 40)
 
 		# ═══════════ LATENCY GRAPH ═══════════
 		var graph_y: float = s.y - 180

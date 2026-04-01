@@ -29,6 +29,14 @@ var _player_value_timer: Dictionary = {}     # { pid: float }
 var _player_flash: Dictionary = {}           # { pid: float } — feedback flash
 var _player_flash_color: Dictionary = {}     # { pid: Color }
 
+var _p2_prev_keys := {}
+
+func _p2_just_pressed(key: int) -> bool:
+	var currently: bool = Input.is_key_pressed(key)
+	var was: bool = _p2_prev_keys.get(key, false)
+	_p2_prev_keys[key] = currently
+	return currently and not was
+
 func _ready() -> void:
 	_base = Node3D.new()
 	_base.set_script(MiniGameBaseScript)
@@ -124,17 +132,21 @@ func _process_inputs(delta: float) -> void:
 	# P2
 	if 2 in _base.player_ids:
 		_player_value_timer[2] -= delta
-		if Input.is_key_pressed(KEY_LEFT) and Engine.get_physics_frames() % 10 == 0:
+		if _p2_just_pressed(KEY_LEFT):
 			_player_selected_octet[2] = maxi(_player_selected_octet[2] - 1, 0)
-		if Input.is_key_pressed(KEY_RIGHT) and Engine.get_physics_frames() % 10 == 0:
+			if AudioManager:
+				AudioManager.play_sfx("align_beep")
+		if _p2_just_pressed(KEY_RIGHT):
 			_player_selected_octet[2] = mini(_player_selected_octet[2] + 1, 3)
+			if AudioManager:
+				AudioManager.play_sfx("align_beep")
 		if Input.is_key_pressed(KEY_UP) and _player_value_timer[2] <= 0.0:
 			_adjust_octet(2, 1)
 			_player_value_timer[2] = VALUE_CHANGE_COOLDOWN
 		if Input.is_key_pressed(KEY_DOWN) and _player_value_timer[2] <= 0.0:
 			_adjust_octet(2, -1)
 			_player_value_timer[2] = VALUE_CHANGE_COOLDOWN
-		if (Input.is_key_pressed(KEY_L) or Input.is_key_pressed(KEY_SHIFT)) and Engine.get_physics_frames() % 20 == 0:
+		if _p2_just_pressed(KEY_L) or _p2_just_pressed(KEY_SHIFT):
 			_submit_answer(2)
 
 func _adjust_octet(pid: int, direction: int) -> void:

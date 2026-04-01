@@ -38,6 +38,14 @@ var _freq_labels: Array[String] = [
 	"900 MHz", "2.4 GHz", "3.5 GHz", "5 GHz", "6 GHz",
 	"11 GHz", "24 GHz", "60 GHz", "5.8 GHz", "3.65 GHz",
 ]
+var _p2_prev_keys := {}
+
+func _p2_just_pressed(key: int) -> bool:
+	var currently: bool = Input.is_key_pressed(key)
+	var was: bool = _p2_prev_keys.get(key, false)
+	_p2_prev_keys[key] = currently
+	return currently and not was
+
 var _block_colors: Array[Color] = [
 	Color("#EF4444"), Color("#F59E0B"), Color("#22C55E"),
 	Color("#3B82F6"), Color("#8B5CF6"), Color("#EC4899"),
@@ -169,6 +177,8 @@ func _process(delta: float) -> void:
 			_resolve_round()
 			# Short delay then next round
 			await get_tree().create_timer(1.0).timeout
+			if not is_instance_valid(self):
+				return
 			if _base.is_running:
 				_start_round()
 
@@ -192,11 +202,10 @@ func _process_inputs(delta: float) -> void:
 			p2_v -= 1.0
 		_player_bid[2] += p2_v * BID_ADJUST_SPEED * delta
 		_player_bid[2] = clampf(_player_bid[2], 0.0, _player_budget.get(2, 0.0))
-		if Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_L):
-			if not _player_bid_locked[2]:
-				_player_bid_locked[2] = true
-				if AudioManager:
-					AudioManager.play_sfx("signal_lock")
+		if _p2_just_pressed(KEY_SHIFT) or _p2_just_pressed(KEY_L):
+			_player_bid_locked[2] = true
+			if AudioManager:
+				AudioManager.play_sfx("signal_lock")
 
 # ═══════════ DRAWING via CanvasLayer ═══════════
 

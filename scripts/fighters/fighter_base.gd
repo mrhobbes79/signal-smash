@@ -324,14 +324,15 @@ func activate_special() -> void:
 func _deactivate_special() -> void:
 	# Reset temporary modifiers to base equipment values
 	var base_mods := {"range": 0.0, "speed": 0.0, "power": 0.0}
-	# Recalculate from equipment
+	# Recalculate from equipment for any player_id
+	var equipment: Dictionary = {}
 	if player_id == 1:
-		var mods := GameMgr.get_equipment_modifiers(GameMgr.p1_equipment)
-		base_mods["range"] = mods["range"] / 100.0
-		base_mods["speed"] = mods["speed"] / 10.0
-		base_mods["power"] = mods["power"] / 50.0
+		equipment = GameMgr.p1_equipment
 	elif player_id == 2:
-		var mods := GameMgr.get_equipment_modifiers(GameMgr.p2_equipment)
+		equipment = GameMgr.p2_equipment
+	# P3/P4 have no equipment slots yet — base_mods stay at 0.0
+	if not equipment.is_empty():
+		var mods := GameMgr.get_equipment_modifiers(equipment)
 		base_mods["range"] = mods["range"] / 100.0
 		base_mods["speed"] = mods["speed"] / 10.0
 		base_mods["power"] = mods["power"] / 50.0
@@ -355,12 +356,17 @@ func _aoe_burst(damage: float, radius: float) -> void:
 func _get_default_special() -> String:
 	# Lookup character name from GameMgr
 	var char_data: Dictionary
-	if player_id == 1:
-		char_data = GameMgr.get_p1()
-	elif player_id == 2:
-		char_data = GameMgr.get_p2()
-	else:
-		return ""
+	match player_id:
+		1:
+			char_data = GameMgr.get_p1()
+		2:
+			char_data = GameMgr.get_p2()
+		3:
+			char_data = GameMgr.get_char_data(2)  # 3rd character slot
+		4:
+			char_data = GameMgr.get_char_data(3)  # 4th character slot
+		_:
+			return ""
 
 	var char_name: String = char_data.get("name", "")
 	match char_name:

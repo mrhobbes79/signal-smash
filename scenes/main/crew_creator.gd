@@ -35,8 +35,17 @@ func _ready() -> void:
 	_draw_node.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_draw_node)
 
-	# Load existing crew data if present
-	if GameMgr:
+	# Load existing crew data if present (prefer persisted Progression data)
+	if Progression and Progression.crew_name != "":
+		_company_name = Progression.crew_name
+		_color_index = Progression.crew_color_index
+		_emblem_index = Progression.crew_emblem_index
+		# Sync back to GameMgr
+		if GameMgr:
+			GameMgr.custom_crew_name = _company_name
+			GameMgr.custom_crew_color = GameMgr.CREW_COLORS[clampi(_color_index, 0, GameMgr.CREW_COLORS.size() - 1)]
+			GameMgr.custom_crew_emblem = _emblem_index
+	elif GameMgr:
 		_company_name = GameMgr.custom_crew_name
 		_color_index = GameMgr.CREW_COLORS.find(GameMgr.custom_crew_color)
 		if _color_index < 0:
@@ -132,6 +141,12 @@ func _save_crew() -> void:
 		GameMgr.custom_crew_name = _company_name.strip_edges()
 		GameMgr.custom_crew_color = GameMgr.CREW_COLORS[_color_index]
 		GameMgr.custom_crew_emblem = _emblem_index
+	# Persist crew data to save file
+	if Progression:
+		Progression.crew_name = _company_name.strip_edges()
+		Progression.crew_color_index = _color_index
+		Progression.crew_emblem_index = _emblem_index
+		Progression.save_game()
 	_saved = true
 	_save_flash = 2.0
 	if AudioManager:
@@ -214,7 +229,7 @@ class _CrewDraw extends Control:
 		draw_string(font, Vector2(field_x + 10, emblem_y + 18), "CREW EMBLEM  (A/D to cycle)", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(WARN, 0.8))
 		# Emblem icons as text
 		var emblem_symbols := ["●", "■", "▲", "★", "⌇", "〜", "◈", "⊤"]
-		for i in range(GameMgr.CREW_EMBLEMS.size()):
+		for i in range(mini(emblem_symbols.size(), GameMgr.CREW_EMBLEMS.size())):
 			var emb_x: float = field_x + 10 + i * 50.0
 			var emb_y: float = emblem_y + 46
 			var emb_color: Color = Color.WHITE if i == creator._emblem_index else Color(TEXT, 0.4)

@@ -13,6 +13,7 @@ var _current_step: int = 0
 var _total_steps: int = 7
 var _time: float = 0.0
 var _step_completed: bool = false
+var _completed: bool = false
 var _draw_node: Control
 
 var _steps: Array[Dictionary] = [
@@ -61,6 +62,10 @@ var _steps: Array[Dictionary] = [
 ]
 
 func _ready() -> void:
+	# Mark tutorial as shown to prevent infinite redirect loop
+	if Progression:
+		Progression.tutorial_shown = true
+
 	# Background color
 	var bg_rect := ColorRect.new()
 	bg_rect.color = BG
@@ -111,7 +116,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func _advance_step() -> void:
 	_current_step += 1
 	if _current_step >= _total_steps:
+		_completed = true
 		_go_to_main_menu()
+		return
 	if AudioManager:
 		AudioManager.play_sfx("menu_select")
 
@@ -131,6 +138,10 @@ class _TutorialDraw extends Control:
 		var t: float = tutorial._time
 		var current: int = tutorial._current_step
 		var total: int = tutorial._total_steps
+
+		if tutorial._completed or current >= tutorial._steps.size():
+			return
+
 		var step_data: Dictionary = tutorial._steps[current]
 
 		# ═══════════ SCANNING LINE ═══════════

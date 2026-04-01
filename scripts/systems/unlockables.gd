@@ -93,9 +93,7 @@ func check_unlocks() -> Array[String]:
 
 func _evaluate_condition(condition: String) -> bool:
 	# Get progression reference (autoload)
-	var prog: Node = Engine.get_singleton("Progression") if Engine.has_singleton("Progression") else null
-	if prog == null:
-		prog = get_node_or_null("/root/Progression")
+	var prog: Node = get_node_or_null("/root/Progression")
 	if prog == null:
 		return false
 
@@ -145,6 +143,9 @@ func load_unlockables() -> void:
 	file.close()
 	if err != OK:
 		push_warning("[UNLOCKABLES] Failed to parse save file")
+		return
+	if not json.data is Dictionary:
+		push_warning("[UNLOCKABLES] Save file data is not a Dictionary, resetting to defaults")
 		return
 	var data: Dictionary = json.data
 	# Restore unlocked list

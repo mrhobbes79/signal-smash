@@ -34,8 +34,8 @@ func _load_csv(path: String) -> void:
 		if line == "":
 			continue
 
-		# Simple CSV parse (handles commas in values would need quotes, but our data is clean)
-		var parts: PackedStringArray = line.split(",")
+		# CSV parse that handles quoted values containing commas
+		var parts: Array[String] = _parse_csv_line(line)
 		if parts.size() < 2:
 			continue
 
@@ -75,6 +75,25 @@ func cycle_language() -> void:
 ## Get current language code
 func get_language() -> String:
 	return _current_language
+
+## Parse a CSV line handling quoted values that may contain commas
+func _parse_csv_line(line: String) -> Array[String]:
+	var result: Array[String] = []
+	var current := ""
+	var in_quotes := false
+	var i := 0
+	while i < line.length():
+		var c := line[i]
+		if c == '"':
+			in_quotes = not in_quotes
+		elif c == ',' and not in_quotes:
+			result.append(current)
+			current = ""
+		else:
+			current += c
+		i += 1
+	result.append(current)
+	return result
 
 ## Get display name for current language
 func get_language_name() -> String:

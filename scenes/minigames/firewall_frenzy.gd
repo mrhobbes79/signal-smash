@@ -30,6 +30,14 @@ var _spawn_timers: Array[float] = []
 # Per player
 var _player_selected_lane: Dictionary = {}  # { pid: int } — relative lane (0-3)
 
+var _p2_prev_keys := {}
+
+func _p2_just_pressed(key: int) -> bool:
+	var currently: bool = Input.is_key_pressed(key)
+	var was: bool = _p2_prev_keys.get(key, false)
+	_p2_prev_keys[key] = currently
+	return currently and not was
+
 func _ready() -> void:
 	_base = Node3D.new()
 	_base.set_script(MiniGameBaseScript)
@@ -85,15 +93,24 @@ func _process_inputs(_delta: float) -> void:
 
 	# P2 — manages lanes 4-7 (bottom half)
 	if 2 in _base.player_ids:
-		if Input.is_key_pressed(KEY_UP) and Engine.get_physics_frames() % 10 == 0:
+		if _p2_just_pressed(KEY_UP):
 			_player_selected_lane[2] = maxi(_player_selected_lane[2] - 1, 0)
-		if Input.is_key_pressed(KEY_DOWN) and Engine.get_physics_frames() % 10 == 0:
+			if AudioManager:
+				AudioManager.play_sfx("align_beep")
+		if _p2_just_pressed(KEY_DOWN):
 			_player_selected_lane[2] = mini(_player_selected_lane[2] + 1, LANES_PER_PLAYER - 1)
-		if Input.is_key_pressed(KEY_L) and Engine.get_physics_frames() % 15 == 0:
+			if AudioManager:
+				AudioManager.play_sfx("align_beep")
+		if _p2_just_pressed(KEY_L):
 			var lane: int = LANES_PER_PLAYER + _player_selected_lane[2]
 			_firewall_state[lane] = not _firewall_state[lane]
+			if AudioManager:
+				AudioManager.play_sfx("menu_move")
 
 func _spawn_packets(delta: float) -> void:
+	# Cap total packets to prevent unbounded growth
+	if _packets.size() >= 200:
+		return
 	for i in range(TOTAL_LANES):
 		_spawn_timers[i] -= delta
 		if _spawn_timers[i] <= 0.0:

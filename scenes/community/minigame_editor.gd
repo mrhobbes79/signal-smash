@@ -152,11 +152,11 @@ func _handle_file_list_input(event: InputEventKey) -> void:
 			if AudioManager:
 				AudioManager.play_sfx("menu_move")
 		KEY_DOWN, KEY_S:
-			_selected_file_index = mini(_selected_file_index + 1, _saved_files.size() - 1)
+			_selected_file_index = mini(_selected_file_index + 1, maxi(0, _saved_files.size() - 1))
 			if AudioManager:
 				AudioManager.play_sfx("menu_move")
 		KEY_ENTER:
-			if _saved_files.size() > 0:
+			if _saved_files.size() > 0 and _selected_file_index >= 0 and _selected_file_index < _saved_files.size():
 				_load_minigame(_saved_files[_selected_file_index])
 				_mode = 0
 				if AudioManager:

@@ -10,7 +10,7 @@ const TEXT := Color("#E2E8F0")
 const P1_COLOR := Color("#2563EB")
 
 var _selected_index: int = 0
-var _menu_keys: Array[String] = ["MENU_TOURNAMENT", "MENU_CONFERENCE", "MENU_ACADEMY", "MENU_CAMPAIGN", "MENU_MINIGAME", "MENU_CREW", "MENU_COMMUNITY", "MENU_ART_TEST"]
+var _menu_keys: Array[String] = ["MENU_TOURNAMENT", "MENU_CONFERENCE", "MENU_ACADEMY", "MENU_CAMPAIGN", "MENU_MINIGAME", "MENU_CREW", "MENU_EDITOR", "MENU_ART_TEST"]
 var _scene_paths: Array[String] = [
 	"res://scenes/main/character_select.tscn",
 	"res://scenes/main/conference_mode.tscn",
@@ -26,7 +26,7 @@ var _draw_node: Control
 
 func _ready() -> void:
 	# Auto-redirect to tutorial on very first launch
-	if Progression and Progression.total_fights == 0 and Progression.signal_points == 0:
+	if Progression and Progression.total_fights == 0 and Progression.signal_points == 0 and not Progression.tutorial_shown:
 		get_tree().change_scene_to_file("res://scenes/main/tutorial.tscn")
 		return
 
@@ -142,8 +142,8 @@ class _MenuDraw extends Control:
 			], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(TEXT, 0.3))
 
 		# ═══════════ MENU ITEMS ═══════════
-		var menu_start_y: float = s.y * 0.50
-		var item_height: float = 60.0
+		var menu_start_y: float = s.y * 0.44
+		var item_height: float = 42.0
 
 		for i in range(menu._menu_keys.size()):
 			var item_y: float = menu_start_y + i * item_height
@@ -153,14 +153,14 @@ class _MenuDraw extends Control:
 			if is_selected:
 				# Selection highlight
 				var sel_pulse: float = (sin(t * 4.0) + 1.0) / 2.0
-				draw_rect(Rect2(s.x * 0.25, item_y - 30, s.x * 0.5, 45), Color(ACCENT, 0.1 + sel_pulse * 0.1))
-				draw_rect(Rect2(s.x * 0.25, item_y - 30, s.x * 0.5, 45), ACCENT, false, 2.0)
+				draw_rect(Rect2(s.x * 0.25, item_y - 24, s.x * 0.5, 36), Color(ACCENT, 0.1 + sel_pulse * 0.1))
+				draw_rect(Rect2(s.x * 0.25, item_y - 24, s.x * 0.5, 36), ACCENT, false, 2.0)
 				# Arrow indicator
-				draw_string(font, Vector2(s.x * 0.25 + 10, item_y), "▶", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, ACCENT)
+				draw_string(font, Vector2(s.x * 0.25 + 10, item_y), "▶", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, ACCENT)
 				# Selected text
-				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), item_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, ACCENT)
+				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), item_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, ACCENT)
 			else:
-				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), item_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(TEXT, 0.5))
+				draw_string(font, Vector2(s.x / 2.0 - 100, item_y), item_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(TEXT, 0.5))
 
 		# ═══════════ BOTTOM INFO ═══════════
 		var bottom_y := s.y - 80

@@ -29,10 +29,11 @@ func _ready() -> void:
 	add_child(_draw_node)
 
 	# Get result from progression manager
-	_result = Progression.last_fight_result
-	_phase_before = _result.get("phase_before", Progression.current_phase)
-	_phase_after = Progression.current_phase
-	_leveled_up = _phase_after > _phase_before
+	if Progression:
+		_result = Progression.last_fight_result
+		_phase_before = _result.get("phase_before", Progression.current_phase)
+		_phase_after = Progression.current_phase
+		_leveled_up = _phase_after > _phase_before
 
 	if AudioManager:
 		if _result.get("won", false):

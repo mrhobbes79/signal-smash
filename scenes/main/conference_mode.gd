@@ -12,7 +12,9 @@ const GOOD := Color("#22C55E")
 const CRIT := Color("#EF4444")
 
 const P_COLORS: Array[Color] = [Color("#2563EB"), Color("#7C3AED"), Color("#D97706"), Color("#059669")]
+const P_ACCENTS: Array[Color] = [Color("#FCD34D"), Color("#06B6D4"), Color("#D97706"), Color("#10B981")]
 const P_NAMES: Array[String] = ["RICO", "VERO", "AURELIO", "MORXEL"]
+const P_ROLES: Array[String] = ["Cable Specialist", "Spectrum Engineer", "Old School Veteran", "Reality Hacker"]
 
 enum Phase { WAITING, COUNTDOWN, SEMI1, MINI1, SEMI2, MINI2, FINAL, MINI_FINAL, CHAMPION }
 
@@ -211,42 +213,103 @@ class _ConferenceDraw extends Control:
 		var col: Color = WARN if count > 0 else CRIT
 		draw_string(font, Vector2(s.x / 2.0 - 40, s.y / 2.0 + 20), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
+	func _draw_fighter_silhouette(cx: float, cy: float, color: Color, accent: Color, scale: float, t: float, is_attacking: bool) -> void:
+		# Head
+		draw_circle(Vector2(cx, cy - 40 * scale), 20 * scale, color)
+		# Body
+		draw_rect(Rect2(cx - 16 * scale, cy - 18 * scale, 32 * scale, 50 * scale), color)
+		# Legs
+		draw_rect(Rect2(cx - 14 * scale, cy + 32 * scale, 10 * scale, 20 * scale), Color(color, 0.8))
+		draw_rect(Rect2(cx + 4 * scale, cy + 32 * scale, 10 * scale, 20 * scale), Color(color, 0.8))
+		# Equipment accent on chest
+		draw_rect(Rect2(cx - 10 * scale, cy - 10 * scale, 20 * scale, 14 * scale), accent)
+		# Arms
+		if is_attacking:
+			# Attack pose — arm extended
+			draw_rect(Rect2(cx + 16 * scale, cy - 12 * scale, 28 * scale, 8 * scale), color)
+			# Attack flash
+			draw_circle(Vector2(cx + 46 * scale, cy - 8 * scale), 6 * scale, Color(accent, 0.5 + sin(t * 12.0) * 0.5))
+		else:
+			# Idle arms
+			draw_rect(Rect2(cx - 24 * scale, cy - 8 * scale, 8 * scale, 24 * scale), Color(color, 0.8))
+			draw_rect(Rect2(cx + 16 * scale, cy - 8 * scale, 8 * scale, 24 * scale), Color(color, 0.8))
+
 	func _draw_fight(s: Vector2, font: Font) -> void:
 		var players: Array[int] = conf._get_fight_players()
 		var p1: int = players[0]
 		var p2: int = players[1]
+		var t: float = conf._time
 
 		# Round label
 		var round_name: String = "SEMIFINAL 1" if conf._phase == Phase.SEMI1 else ("SEMIFINAL 2" if conf._phase == Phase.SEMI2 else "GRAND FINAL")
 		draw_string(font, Vector2(s.x / 2.0 - 80, 40), round_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, WARN)
 
-		# VS display
-		var vs_y: float = s.y * 0.35
+		# Character silhouettes — fighting area
+		var arena_y: float = s.y * 0.18
+		var arena_h: float = s.y * 0.35
+		# Arena floor
+		draw_rect(Rect2(s.x * 0.1, arena_y + arena_h - 10, s.x * 0.8, 10), Color(ACCENT, 0.15))
+		draw_rect(Rect2(s.x * 0.1, arena_y + arena_h - 2, s.x * 0.8, 2), Color(ACCENT, 0.3))
+
+		# Determine attack states from fight scores (simulate hits)
+		var p1_attacking: bool = fmod(t, 1.5) < 0.3 and conf._fight_timer > 0.5
+		var p2_attacking: bool = fmod(t + 0.7, 1.5) < 0.3 and conf._fight_timer > 0.5
+
+		# P1 fighter (facing right)
+		var p1_cx: float = s.x * 0.3
+		var p1_cy: float = arena_y + arena_h - 65
+		# Idle sway
+		p1_cy += sin(t * 2.5) * 3.0
+		_draw_fighter_silhouette(p1_cx, p1_cy, P_COLORS[p1], P_ACCENTS[p1], 1.2, t, p1_attacking)
+		# Name under fighter
+		draw_string(font, Vector2(p1_cx - 30, arena_y + arena_h + 20), P_NAMES[p1], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, P_COLORS[p1])
+		draw_string(font, Vector2(p1_cx - 40, arena_y + arena_h + 38), P_ROLES[p1], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(TEXT, 0.4))
+
+		# P2 fighter (facing left — mirrored)
+		var p2_cx: float = s.x * 0.7
+		var p2_cy: float = arena_y + arena_h - 65
+		p2_cy += sin(t * 2.5 + 1.0) * 3.0
+		_draw_fighter_silhouette(p2_cx, p2_cy, P_COLORS[p2], P_ACCENTS[p2], 1.2, t, p2_attacking)
+		draw_string(font, Vector2(p2_cx - 30, arena_y + arena_h + 20), P_NAMES[p2], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, P_COLORS[p2])
+		draw_string(font, Vector2(p2_cx - 40, arena_y + arena_h + 38), P_ROLES[p2], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(TEXT, 0.4))
+
+		# VS between fighters
+		var vs_pulse: float = (sin(t * 5.0) + 1.0) / 2.0
+		draw_string(font, Vector2(s.x / 2.0 - 20, arena_y + arena_h - 50), "VS", HORIZONTAL_ALIGNMENT_LEFT, -1, 36, Color(CRIT, 0.6 + vs_pulse * 0.4))
+
+		# Hit sparks (random visual flashes during combat)
+		if conf._fight_timer > 0.5 and fmod(t, 0.8) < 0.15:
+			var spark_x: float = s.x * 0.5 + sin(t * 7.0) * s.x * 0.12
+			var spark_y: float = arena_y + arena_h * 0.5 + cos(t * 5.0) * 20.0
+			draw_circle(Vector2(spark_x, spark_y), 5.0, Color(WARN, 0.8))
+			draw_circle(Vector2(spark_x + 8, spark_y - 5), 3.0, Color(1.0, 1.0, 1.0, 0.6))
+
+		# Score panels below the arena
+		var panel_y: float = s.y * 0.65
 
 		# P1 panel
-		draw_rect(Rect2(s.x * 0.1, vs_y, s.x * 0.3, 120), Color(P_COLORS[p1], 0.15))
-		draw_rect(Rect2(s.x * 0.1, vs_y, s.x * 0.3, 120), P_COLORS[p1], false, 2.0)
-		draw_string(font, Vector2(s.x * 0.1 + 20, vs_y + 40), P_NAMES[p1], HORIZONTAL_ALIGNMENT_LEFT, -1, 36, P_COLORS[p1])
-		draw_string(font, Vector2(s.x * 0.1 + 20, vs_y + 70), "Score: %.0f" % conf._fight_scores[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TEXT)
+		draw_rect(Rect2(s.x * 0.1, panel_y, s.x * 0.3, 80), Color(P_COLORS[p1], 0.15))
+		draw_rect(Rect2(s.x * 0.1, panel_y, s.x * 0.3, 80), P_COLORS[p1], false, 2.0)
+		draw_string(font, Vector2(s.x * 0.1 + 20, panel_y + 28), P_NAMES[p1], HORIZONTAL_ALIGNMENT_LEFT, -1, 24, P_COLORS[p1])
+		draw_string(font, Vector2(s.x * 0.1 + 20, panel_y + 50), "Score: %.0f" % conf._fight_scores[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, TEXT)
 		# Score bar
 		var bar1_w: float = (s.x * 0.3 - 40) * minf(conf._fight_scores[0] / 100.0, 1.0)
-		draw_rect(Rect2(s.x * 0.1 + 20, vs_y + 85, bar1_w, 15), P_COLORS[p1])
+		draw_rect(Rect2(s.x * 0.1 + 20, panel_y + 58, s.x * 0.3 - 40, 12), Color(0.15, 0.15, 0.15))
+		draw_rect(Rect2(s.x * 0.1 + 20, panel_y + 58, bar1_w, 12), P_COLORS[p1])
 
-		# VS
-		draw_string(font, Vector2(s.x / 2.0 - 20, vs_y + 55), "VS", HORIZONTAL_ALIGNMENT_LEFT, -1, 36, CRIT)
-
-		# P2 panel
-		draw_rect(Rect2(s.x * 0.6, vs_y, s.x * 0.3, 120), Color(P_COLORS[p2], 0.15))
-		draw_rect(Rect2(s.x * 0.6, vs_y, s.x * 0.3, 120), P_COLORS[p2], false, 2.0)
-		draw_string(font, Vector2(s.x * 0.6 + 20, vs_y + 40), P_NAMES[p2], HORIZONTAL_ALIGNMENT_LEFT, -1, 36, P_COLORS[p2])
-		draw_string(font, Vector2(s.x * 0.6 + 20, vs_y + 70), "Score: %.0f" % conf._fight_scores[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TEXT)
-		var bar2_w: float = (s.x * 0.3 - 40) * minf(conf._fight_scores[1] / 100.0, 1.0)
-		draw_rect(Rect2(s.x * 0.6 + 20, vs_y + 85, bar2_w, 15), P_COLORS[p2])
-
-		# Timer
+		# Timer (center between panels)
 		var remaining: float = maxf(FIGHT_DURATION - conf._fight_timer, 0.0)
 		var tc: Color = GOOD if remaining > 3.0 else CRIT
-		draw_string(font, Vector2(s.x / 2.0 - 15, vs_y + 100), "%.0f" % remaining, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, tc)
+		draw_string(font, Vector2(s.x / 2.0 - 15, panel_y + 50), "%.0f" % remaining, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, tc)
+
+		# P2 panel
+		draw_rect(Rect2(s.x * 0.6, panel_y, s.x * 0.3, 80), Color(P_COLORS[p2], 0.15))
+		draw_rect(Rect2(s.x * 0.6, panel_y, s.x * 0.3, 80), P_COLORS[p2], false, 2.0)
+		draw_string(font, Vector2(s.x * 0.6 + 20, panel_y + 28), P_NAMES[p2], HORIZONTAL_ALIGNMENT_LEFT, -1, 24, P_COLORS[p2])
+		draw_string(font, Vector2(s.x * 0.6 + 20, panel_y + 50), "Score: %.0f" % conf._fight_scores[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, TEXT)
+		var bar2_w: float = (s.x * 0.3 - 40) * minf(conf._fight_scores[1] / 100.0, 1.0)
+		draw_rect(Rect2(s.x * 0.6 + 20, panel_y + 58, s.x * 0.3 - 40, 12), Color(0.15, 0.15, 0.15))
+		draw_rect(Rect2(s.x * 0.6 + 20, panel_y + 58, bar2_w, 12), P_COLORS[p2])
 
 	func _draw_mini_break(s: Vector2, font: Font) -> void:
 		var text: String

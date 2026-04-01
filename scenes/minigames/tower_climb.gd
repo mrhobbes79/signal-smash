@@ -23,6 +23,14 @@ var _player_secured: Dictionary = {}       # { pid: Array[bool] } — checkpoint
 var _player_finished: Dictionary = {}      # { pid: bool }
 var _player_slip_flash: Dictionary = {}    # { pid: float } — visual flash timer
 
+var _p2_prev_keys := {}
+
+func _p2_just_pressed(key: int) -> bool:
+	var currently: bool = Input.is_key_pressed(key)
+	var was: bool = _p2_prev_keys.get(key, false)
+	_p2_prev_keys[key] = currently
+	return currently and not was
+
 func _ready() -> void:
 	_base = Node3D.new()
 	_base.set_script(MiniGameBaseScript)
@@ -60,19 +68,12 @@ func _process_inputs(_delta: float) -> void:
 		if Input.is_action_just_pressed("jump"):
 			_try_secure(1)
 
-	# P2 — confirm = L/Shift, action = L/Shift alternate
+	# P2 — L to climb, Shift to secure harness
 	if 2 in _base.player_ids and not _player_finished[2]:
-		if Input.is_key_pressed(KEY_L) and Engine.get_physics_frames() % 15 == 0:
-			pass  # We need just_pressed behavior for L
-		if Input.is_key_pressed(KEY_SHIFT):
-			pass
-		# Use frame-based debounce for P2
-		if Input.is_key_pressed(KEY_L) and not Input.is_key_pressed(KEY_SHIFT):
-			if Engine.get_physics_frames() % 10 == 0:
-				_try_climb(2)
-		if Input.is_key_pressed(KEY_SHIFT) and not Input.is_key_pressed(KEY_L):
-			if Engine.get_physics_frames() % 10 == 0:
-				_try_secure(2)
+		if _p2_just_pressed(KEY_L):
+			_try_climb(2)
+		if _p2_just_pressed(KEY_SHIFT):
+			_try_secure(2)
 
 func _try_climb(pid: int) -> void:
 	var now: float = Time.get_ticks_msec() / 1000.0

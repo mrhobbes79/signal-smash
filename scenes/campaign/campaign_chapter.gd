@@ -234,12 +234,12 @@ func _start_outro() -> void:
 
 func _show_results() -> void:
 	_state = State.RESULTS
-	# Mark chapter complete and award rewards
+	# Mark chapter complete and award rewards (only on first completion)
 	if Progression:
 		if _chapter not in Progression.campaign_chapters_complete:
 			Progression.campaign_chapters_complete.append(_chapter)
-		Progression.signal_points += CHAPTER_SP
-		Progression.knowledge_tokens += CHAPTER_KT
+			Progression.signal_points += CHAPTER_SP
+			Progression.knowledge_tokens += CHAPTER_KT
 		Progression.save_game()
 
 func _process(delta: float) -> void:
@@ -341,11 +341,13 @@ func _update_ch7_boss(delta: float) -> void:
 		if _boss_papers[i]["y"] > 0.85 and _boss_papers[i]["y"] < 0.95:
 			if absf(_boss_papers[i]["x"] - _boss_player_x) < 0.08:
 				_boss_hits += 1
-				to_remove.append(i)
+				if i not in to_remove:
+					to_remove.append(i)
 				if AudioManager:
 					AudioManager.play_sfx("menu_move")
 		if _boss_papers[i]["y"] > 1.0:
-			to_remove.append(i)
+			if i not in to_remove:
+				to_remove.append(i)
 
 	to_remove.reverse()
 	for i in to_remove:

@@ -91,6 +91,12 @@ var total_fights: int = 0
 var total_minigames: int = 0
 var best_minigame_scores: Dictionary = {}  ## { "minigame_name": float }
 var campaign_chapters_complete: Array[int] = []
+var tutorial_shown: bool = false
+
+## Custom crew data (persisted)
+var crew_name: String = ""
+var crew_color_index: int = 0
+var crew_emblem_index: int = 0
 
 ## Fight result from last match (read by victory screen)
 var last_fight_result: Dictionary = {}
@@ -239,11 +245,17 @@ func save_game() -> void:
 		"minigames": total_minigames,
 		"best_scores": best_minigame_scores,
 		"campaign_complete": campaign_chapters_complete,
+		"tutorial_shown": tutorial_shown,
+		"crew_name": crew_name,
+		"crew_color_index": crew_color_index,
+		"crew_emblem_index": crew_emblem_index,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(data, "\t"))
 		file.close()
+	else:
+		push_warning("[PROGRESSION] Failed to save game data")
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
@@ -256,6 +268,9 @@ func load_game() -> void:
 	file.close()
 	if err != OK:
 		push_warning("[PROGRESSION] Failed to parse save file")
+		return
+	if not json.data is Dictionary:
+		push_warning("[PROGRESSION] Save file data is not a Dictionary, resetting to defaults")
 		return
 	var data: Dictionary = json.data
 	current_phase = data.get("phase", Phase.ROOKIE)
@@ -270,3 +285,7 @@ func load_game() -> void:
 	campaign_chapters_complete = []
 	for ch in loaded_campaign:
 		campaign_chapters_complete.append(int(ch))
+	tutorial_shown = data.get("tutorial_shown", false)
+	crew_name = data.get("crew_name", "")
+	crew_color_index = data.get("crew_color_index", 0)
+	crew_emblem_index = data.get("crew_emblem_index", 0)

@@ -1335,11 +1335,21 @@ func _create_fighter(id: int, pos: Vector3, primary: Color, secondary: Color, ac
 	hit_visual.visible = false
 	hitbox.add_child(hit_visual)
 
+	# Track which targets have been hit per attack swing (reset in attack_state.enter)
+	var hit_targets: Array = []
+	hitbox.set_meta("hit_targets", hit_targets)
+
 	# Connect hitbox to damage (uses attacker's power modifier)
 	hitbox.area_entered.connect(func(area: Area3D) -> void:
 		if area.name == "Hurtbox" and area.get_parent() != fighter:
 			var target = area.get_parent()
+			# Per-target hit tracking: same attack can't hit same target twice
+			var targets_hit: Array = hitbox.get_meta("hit_targets", [])
+			if target in targets_hit:
+				return
 			if target and target.has_method("take_damage") and not target.is_invincible:
+				targets_hit.append(target)
+				hitbox.set_meta("hit_targets", targets_hit)
 				var dmg: float = ATTACK_DAMAGE * fighter.get_damage_multiplier()
 				var kb: float = ATTACK_KNOCKBACK * fighter.get_damage_multiplier()
 				target.take_damage(dmg, fighter.global_position, kb)
@@ -1585,15 +1595,15 @@ func _process(delta: float) -> void:
 	_update_hud()
 	_update_camera()
 	_check_fight_end(delta)
-	_update_combo_meters()
+	_update_combo_meters(delta)
 	_update_attack_effects(delta)
 	_update_weather(delta)
 
-func _update_combo_meters() -> void:
+func _update_combo_meters(delta: float) -> void:
 	# Check combo timer decay for active combos in fighter_base
 	for f in [_fighter1, _fighter2]:
 		if f and f.combo_active:
-			f.combo_timer -= get_process_delta_time()
+			f.combo_timer -= delta
 			if f.combo_timer <= 0:
 				f.combo_active = false
 				f.is_invincible = false
@@ -1872,7 +1882,7 @@ func _update_camera() -> void:
 	var target_z: float = clampf(dist * 0.8 + 8.0, 10.0, 20.0)
 
 	_camera.position = _camera.position.lerp(
-		Vector3(center.x, center.y + 4.0, target_z), 0.05)
+		Vector3(center.x, center.y + 4.0, target_z), 0.12)
 
 func _check_fight_end(delta: float) -> void:
 	# Match over — waiting to go to victory screen
@@ -1947,22 +1957,38 @@ func _end_match() -> void:
 
 	# Record result in progression
 	var phase_before: int = Progression.current_phase
-	var p1_won: bool = _p1_round_wins > _p2_round_wins
 
-	if p1_won:
+	if _p1_round_wins > _p2_round_wins:
 		var result := Progression.record_fight_win(_fighter1.damage_accumulated)
 		result["phase_before"] = phase_before
 		result["p1_rounds"] = _p1_round_wins
 		result["p2_rounds"] = _p2_round_wins
 		Progression.last_fight_result = result
 		print("[FIGHT] MATCH OVER: P1 WINS %d-%d! +%d SP" % [_p1_round_wins, _p2_round_wins, result["sp_earned"]])
-	else:
+	elif _p2_round_wins > _p1_round_wins:
 		var result := Progression.record_fight_loss(_fighter1.damage_accumulated)
 		result["phase_before"] = phase_before
 		result["p1_rounds"] = _p1_round_wins
 		result["p2_rounds"] = _p2_round_wins
 		Progression.last_fight_result = result
 		print("[FIGHT] MATCH OVER: P2 WINS %d-%d! P1 gets +%d SP" % [_p2_round_wins, _p1_round_wins, result["sp_earned"]])
+	else:
+		# Draw — tied round wins (e.g. double KO every round). No win/loss recorded.
+		Progression.total_fights += 1
+		Progression.signal_points += Progression.SP_FIGHT_LOSS
+		var result := {
+			"won": false,
+			"perfect": false,
+			"draw": true,
+			"sp_earned": Progression.SP_FIGHT_LOSS,
+			"kt_earned": 0,
+			"phase_before": phase_before,
+			"p1_rounds": _p1_round_wins,
+			"p2_rounds": _p2_round_wins,
+		}
+		Progression.last_fight_result = result
+		Progression.save_game()
+		print("[FIGHT] MATCH OVER: DRAW %d-%d! P1 gets +%d SP" % [_p1_round_wins, _p2_round_wins, result["sp_earned"]])
 
 	if AudioManager:
 		AudioManager.stop_music()
