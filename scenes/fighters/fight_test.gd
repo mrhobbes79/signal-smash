@@ -2068,7 +2068,50 @@ func _handle_p2_input(event: InputEventKey) -> void:
 ## ═══════════ CHARACTER MODELS ═══════════
 
 func _build_rico_model(model: Node3D, primary: Color, secondary: Color, accent: Color) -> void:
-	## Rico — Cable Specialist. Blue/yellow. Hard hat, cable whip on belt, tool pouch.
+	## Rico — Cable Specialist. Blue/yellow. Try .glb blockout first, fallback to procedural.
+	var glb_path := "res://assets/models/characters/rico_blockout.glb"
+	if ResourceLoader.exists(glb_path):
+		var scene: PackedScene = load(glb_path)
+		if scene:
+			var instance := scene.instantiate()
+			instance.name = "RicoBlockout"
+			instance.scale = Vector3(1.7, 1.7, 1.7)
+			# Z-up → Y-up, compensate TripoSR intrinsic lean (~7° X, ~3.5° Z)
+			instance.rotation_degrees = Vector3(-87.0, 180.0, 7.0)
+			# Feet at original Z=-0.499, after rotation ≈ Y=-0.498 * 1.7 = -0.85
+			instance.position.y = 0.85
+
+			# Load baked texture
+			var tex_path := "res://assets/models/characters/rico_blockout_texture.png"
+			var texture: Texture2D = null
+			if ResourceLoader.exists(tex_path):
+				texture = load(tex_path)
+
+			# Apply materials
+			var mesh_nodes := instance.find_children("*", "MeshInstance3D", true)
+			for node in mesh_nodes:
+				var mesh_inst: MeshInstance3D = node
+				for surf_idx in range(mesh_inst.mesh.get_surface_count()):
+					var mat := StandardMaterial3D.new()
+					mat.albedo_color = Color.WHITE
+					mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+					mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+					mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+					mat.no_depth_test = false
+					if texture:
+						mat.albedo_texture = texture
+						mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+					mesh_inst.set_surface_override_material(surf_idx, mat)
+
+			model.add_child(instance)
+			print("[FIGHT] Rico: loaded .glb blockout (texture: %s)" % str(texture != null))
+			return
+
+	print("[FIGHT] Rico: using procedural fallback")
+	_build_rico_model_procedural(model, primary, secondary, accent)
+
+func _build_rico_model_procedural(model: Node3D, primary: Color, secondary: Color, accent: Color) -> void:
+	## Rico procedural fallback — Cable Specialist. Blue/yellow. Hard hat, cable whip on belt, tool pouch.
 
 	# Boots (dark brown, chunky)
 	var boot_l := ProceduralMesh.create_box(Vector3(0.14, 0.15, 0.2), Color("#3B2507"))
