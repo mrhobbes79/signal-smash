@@ -16,11 +16,24 @@ var _is_music_playing: bool = false
 ## SFX cache
 var _sfx_cache: Dictionary = {}
 
+## SFX pool — reusable AudioStreamPlayer instances to avoid spawning a node per hit
+const SFX_POOL_SIZE: int = 16
+var _sfx_pool: Array[AudioStreamPlayer] = []
+var _sfx_pool_idx: int = 0
+
 func _ready() -> void:
 	_setup_buses()
 	_generate_sfx_cache()
 	_setup_music_player()
+	_setup_sfx_pool()
 	print("[AUDIO] AudioManager initialized")
+
+func _setup_sfx_pool() -> void:
+	for i in range(SFX_POOL_SIZE):
+		var p := AudioStreamPlayer.new()
+		p.bus = "SFX"
+		add_child(p)
+		_sfx_pool.append(p)
 
 func _setup_buses() -> void:
 	# Add SFX bus (only if it doesn't already exist)
@@ -77,18 +90,27 @@ func _generate_sfx_cache() -> void:
 	_sfx_cache["announce_ko"] = _gen_announcer_ko()
 	_sfx_cache["announce_combo"] = _gen_announcer_combo()
 
-## Play a cached SFX
+## Play a cached SFX — uses round-robin pool (no per-call node alloc / no leak risk)
 func play_sfx(sfx_name: String, volume_db: float = 0.0) -> void:
 	if sfx_name not in _sfx_cache:
 		push_warning("[AUDIO] SFX not found: %s" % sfx_name)
 		return
-	var player := AudioStreamPlayer.new()
+	if _sfx_pool.is_empty():
+		# Fallback for very early calls before _ready() finishes
+		var fallback := AudioStreamPlayer.new()
+		fallback.stream = _sfx_cache[sfx_name]
+		fallback.bus = "SFX"
+		fallback.volume_db = volume_db
+		add_child(fallback)
+		fallback.play()
+		fallback.finished.connect(fallback.queue_free)
+		return
+	var player: AudioStreamPlayer = _sfx_pool[_sfx_pool_idx]
+	_sfx_pool_idx = (_sfx_pool_idx + 1) % SFX_POOL_SIZE
+	player.stop()
 	player.stream = _sfx_cache[sfx_name]
-	player.bus = "SFX"
 	player.volume_db = volume_db
-	add_child(player)
 	player.play()
-	player.finished.connect(player.queue_free)
 
 ## Play SFX at a 3D position
 func play_sfx_3d(sfx_name: String, position: Vector3, volume_db: float = 0.0) -> AudioStreamPlayer3D:

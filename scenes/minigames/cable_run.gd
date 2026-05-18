@@ -42,6 +42,19 @@ func _ready() -> void:
 	_base.buff_value = 10
 	_base.music_index = 2  # Mozart — playful allegro
 	add_child(_base)
+	_init_draw_overlay()
+
+func _init_draw_overlay() -> void:
+	# Overlay construido en _ready (antes estaba en _enter_tree con await — causaba race).
+	if _draw_layer == null:
+		_draw_layer = CanvasLayer.new()
+		_draw_layer.layer = 12
+		add_child(_draw_layer)
+		_draw_control = _CableDraw.new()
+		_draw_control.game = self
+		_draw_control.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_draw_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_draw_layer.add_child(_draw_control)
 
 func start(player_ids: Array) -> void:
 	_base.start(player_ids)
@@ -227,16 +240,7 @@ func _confirm_connector(pid: int) -> void:
 var _draw_layer: CanvasLayer
 var _draw_control: Control
 
-func _enter_tree() -> void:
-	_draw_layer = CanvasLayer.new()
-	_draw_layer.layer = 12
-	add_child.call_deferred(_draw_layer)
-	await get_tree().process_frame
-	_draw_control = _CableDraw.new()
-	_draw_control.game = self
-	_draw_control.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_draw_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_draw_layer.add_child(_draw_control)
+# _enter_tree con await removido — la creación del overlay ahora vive en _init_draw_overlay() llamado desde _ready
 
 
 class _CableDraw extends Control:

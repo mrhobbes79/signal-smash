@@ -48,6 +48,18 @@ func _ready() -> void:
 	_base.buff_value = 15
 	_base.music_index = 5
 	add_child(_base)
+	_init_draw_overlay()
+
+func _init_draw_overlay() -> void:
+	if _draw_layer == null:
+		_draw_layer = CanvasLayer.new()
+		_draw_layer.layer = 12
+		add_child(_draw_layer)
+		_draw_control = _FirewallDraw.new()
+		_draw_control.game = self
+		_draw_control.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_draw_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_draw_layer.add_child(_draw_control)
 
 func start(player_ids: Array) -> void:
 	_base.start(player_ids)
@@ -182,16 +194,7 @@ func _update_packets(delta: float) -> void:
 var _draw_layer: CanvasLayer
 var _draw_control: Control
 
-func _enter_tree() -> void:
-	_draw_layer = CanvasLayer.new()
-	_draw_layer.layer = 12
-	add_child.call_deferred(_draw_layer)
-	await get_tree().process_frame
-	_draw_control = _FirewallDraw.new()
-	_draw_control.game = self
-	_draw_control.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_draw_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_draw_layer.add_child(_draw_control)
+# _enter_tree con await removido — el overlay se construye en _init_draw_overlay() llamado desde _ready
 
 
 class _FirewallDraw extends Control:

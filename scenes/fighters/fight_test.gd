@@ -63,10 +63,68 @@ func _ready() -> void:
 	_build_hud()
 	_build_lighting()
 	_build_spectator_hud()
+	_build_countdown_label()
 	# Start fight music based on arena
 	if AudioManager:
 		var arena_music: String = GameMgr.get_arena().get("music", "monterrey")
 		AudioManager.play_music_fight(arena_music)
+	_start_countdown()
+
+# ─── Countdown 3-2-1-FIGHT ──────────────────────────────────────────────
+var _countdown_active: bool = false
+var _countdown_step: int = 0  # 3, 2, 1, FIGHT
+var _countdown_timer: float = 0.0
+var _countdown_label_node: Label = null
+const _COUNTDOWN_STEPS: Array[String] = ["3", "2", "1", "FIGHT!"]
+
+func _build_countdown_label() -> void:
+	var canvas := get_node_or_null("CanvasLayer")
+	if canvas == null:
+		canvas = CanvasLayer.new()
+		canvas.name = "CanvasLayer"
+		add_child(canvas)
+	_countdown_label_node = Label.new()
+	_countdown_label_node.set_anchors_preset(Control.PRESET_CENTER)
+	_countdown_label_node.add_theme_font_size_override("font_size", 220)
+	_countdown_label_node.add_theme_color_override("font_color", Color(1, 0.95, 0.2))
+	_countdown_label_node.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_countdown_label_node.add_theme_constant_override("outline_size", 12)
+	_countdown_label_node.text = ""
+	_countdown_label_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_countdown_label_node.position = Vector2(-180, -180)
+	canvas.add_child(_countdown_label_node)
+
+func _start_countdown() -> void:
+	_countdown_active = true
+	_countdown_step = 0
+	_countdown_timer = 0.0
+	# Make fighters invincible during countdown so swings during 3-2-1 don't connect
+	if _fighter1:
+		_fighter1.is_invincible = true
+	if _fighter2:
+		_fighter2.is_invincible = true
+	_show_countdown_step()
+
+func _show_countdown_step() -> void:
+	if _countdown_step >= _COUNTDOWN_STEPS.size():
+		_end_countdown()
+		return
+	if _countdown_label_node:
+		_countdown_label_node.text = _COUNTDOWN_STEPS[_countdown_step]
+	if AudioManager:
+		if _countdown_step < 3:
+			AudioManager.play_sfx("countdown")
+		else:
+			AudioManager.play_sfx("fight_start")
+
+func _end_countdown() -> void:
+	_countdown_active = false
+	if _countdown_label_node:
+		_countdown_label_node.text = ""
+	if _fighter1:
+		_fighter1.is_invincible = false
+	if _fighter2:
+		_fighter2.is_invincible = false
 
 var _hazard_antenna: Node3D
 var _hazard_area: Area3D
@@ -1584,7 +1642,37 @@ var _combo_label: Label = null
 var _combo_flash_rect: ColorRect = null
 var _camera_original_pos: Vector3
 
+# Hit-stop + screen-shake persistente (sumado DESPUÉS del lerp del camera_update)
+var _hit_stop_timer: float = 0.0
+var _camera_shake_strength: float = 0.0
+var _camera_shake_decay: float = 8.0  # cuán rápido decae por segundo
+
+func _trigger_hit_stop(duration: float = 0.05, time_scale: float = 0.05) -> void:
+	Engine.time_scale = time_scale
+	_hit_stop_timer = duration
+
+func _trigger_shake(strength: float) -> void:
+	_camera_shake_strength = max(_camera_shake_strength, strength)
+
 func _process(delta: float) -> void:
+	# Hit-stop: restore normal time scale once the freeze window expires.
+	# Usar delta sin escalar (Engine.get_process_delta_time podría estar escalado en algunos build settings)
+	if _hit_stop_timer > 0.0:
+		_hit_stop_timer -= delta / max(Engine.time_scale, 0.0001)
+		if _hit_stop_timer <= 0.0:
+			Engine.time_scale = 1.0
+
+	# Countdown gate — bloquea movement + ataques durante 3-2-1-FIGHT
+	if _countdown_active:
+		_countdown_timer += delta
+		if _countdown_timer >= 1.0:
+			_countdown_timer = 0.0
+			_countdown_step += 1
+			_show_countdown_step()
+		_update_camera()
+		_apply_camera_shake(delta)
+		return
+
 	# If combo cinematic is active, run that instead of normal game
 	if _combo_attacker != null:
 		_update_combo_cinematic(delta)
@@ -1594,10 +1682,21 @@ func _process(delta: float) -> void:
 	_update_hazard(delta)
 	_update_hud()
 	_update_camera()
+	_apply_camera_shake(delta)
 	_check_fight_end(delta)
 	_update_combo_meters(delta)
 	_update_attack_effects(delta)
 	_update_weather(delta)
+
+func _apply_camera_shake(delta: float) -> void:
+	if _camera_shake_strength <= 0.001 or _camera == null:
+		return
+	# Offset random aplicado DESPUÉS del lerp de _update_camera para que se vea.
+	_camera.position.x += randf_range(-_camera_shake_strength, _camera_shake_strength)
+	_camera.position.y += randf_range(-_camera_shake_strength * 0.6, _camera_shake_strength * 0.6)
+	_camera_shake_strength = max(0.0, _camera_shake_strength - _camera_shake_decay * delta * _camera_shake_strength)
+	if _camera_shake_strength < 0.01:
+		_camera_shake_strength = 0.0
 
 func _update_combo_meters(delta: float) -> void:
 	# Check combo timer decay for active combos in fighter_base
@@ -1646,10 +1745,9 @@ func _spawn_attack_effect(pos: Vector3, attacker: CharacterBody3D) -> void:
 			randf_range(-2, 2)
 		))
 
-	# Camera micro-shake on hit
-	if _camera:
-		_camera.position.x += randf_range(-0.15, 0.15)
-		_camera.position.y += randf_range(-0.1, 0.1)
+	# Hit-stop (freeze frames) + screen shake persistente — pilar del género party-fighter.
+	_trigger_hit_stop(0.05, 0.05)
+	_trigger_shake(0.6)
 
 func _update_attack_effects(delta: float) -> void:
 	var to_remove: Array[int] = []
@@ -1948,8 +2046,8 @@ func _start_next_round() -> void:
 		f2_model.rotation_degrees.y = 180.0
 
 	print("[FIGHT] === ROUND %d ===" % _round)
-	if AudioManager:
-		AudioManager.play_sfx("fight_start")
+	# Cada nueva ronda arranca con countdown (igual que la primera)
+	_start_countdown()
 
 func _end_match() -> void:
 	_match_over = true

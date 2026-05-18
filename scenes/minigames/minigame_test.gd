@@ -122,11 +122,23 @@ func _start_minigame() -> void:
 	_minigame = _scenes[_current_scene_idx].instantiate()
 	add_child(_minigame)
 
-	# Get the MiniGameBase child and connect completion
+	# Get the MiniGameBase child and connect completion.
+	# Buscar por tipo en vez de get_child(0): los minijuegos que usan _enter_tree
+	# con call_deferred (cable_run, firewall_frenzy) pueden insertar un CanvasLayer
+	# como primer hijo, lo que rompía la conexión y dejaba colgado el flujo.
 	await get_tree().process_frame
-	var base = _minigame.get_child(0) if _minigame.get_child_count() > 0 else null
-	if base and base.has_signal("game_completed"):
+	var base = null
+	for child in _minigame.get_children():
+		if child.has_signal("game_completed"):
+			base = child
+			break
+	# Si el minijuego mismo expone la señal (caso de scripts heredando de MiniGameBase)
+	if base == null and _minigame.has_signal("game_completed"):
+		base = _minigame
+	if base:
 		base.game_completed.connect(_on_minigame_completed)
+	else:
+		push_warning("[MinigameTest] No game_completed signal found in %s" % _minigame.name)
 
 	# Start
 	var pids: Array[int] = [1, 2]
