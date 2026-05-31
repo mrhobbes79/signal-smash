@@ -1,4 +1,4 @@
-class_name CharacterBlockout
+qclass_name CharacterBlockout
 extends Node3D
 ## Procedural low-poly character blockout for art style testing.
 ## Creates a character from geometric primitives with character-specific colors.
